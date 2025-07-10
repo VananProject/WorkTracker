@@ -13,6 +13,5 @@ pm2 start npm --name frontend -- run dev
 # --- Backend ---
 cd "/home/ec2-user/webapps/worktracker/backend"
 npm install
-#chmod -R u+rx node_modules
 pm2 start npm --name backend -- run dev
 pm2 save
