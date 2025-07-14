@@ -8,10 +8,10 @@ pm2 delete backend || true
 # --- Frontend ---
 cd "/home/ec2-user/webapps/worktracker/frontend"
 npm install
-pm2 start npm --name frontend -- run dev
+pm2 start npm --name wt_frontend -- run dev
 
 # --- Backend ---
 cd "/home/ec2-user/webapps/worktracker/backend"
 npm install
-pm2 start npm --name backend -- run dev
+pm2 start npm --name wt_backend -- run dev
 pm2 save
