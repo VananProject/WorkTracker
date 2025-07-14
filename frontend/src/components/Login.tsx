@@ -311,7 +311,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
               )}
             </Button>
 
-            {/* <Divider sx={{ mb: 3, opacity: 0.6 }} /> */}
+            { <Divider sx={{ mb: 3, opacity: 0.6 }} /> }
 
             { <Box sx={{ textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
