@@ -2,8 +2,8 @@
 source "/root/.nvm/nvm.sh"
 nvm use 22
 
-pm2 delete frontend || true
-pm2 delete backend || true
+pm2 delete wt_frontend || true
+pm2 delete wt_backend || true
 
 # --- Frontend ---
 cd "/home/ec2-user/webapps/worktracker/frontend"
