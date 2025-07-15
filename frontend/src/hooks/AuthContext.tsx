@@ -119,7 +119,7 @@
 //     dispatch({ type: 'LOGIN_START' });
 
 //     try {
-//       const response = await fetch('http://3.6.23.137:5000/api/auth/signup', {
+//       const response = await fetch('http://localhost:5000/api/auth/signup', {
 //         method: 'POST',
 //         headers: {
 //           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ const signup = async (
   dispatch({ type: 'LOGIN_START' });
 
   try {
-    const response = await fetch('http://3.6.23.137:5000/api/auth/signup', {
+    const response = await fetch('https://3.6.23.137:5000/api/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
