@@ -3,6 +3,10 @@ import type { Task } from '../types/TaskHistoryTypes';
 export type RecurringType = 'daily' | 'weekly' | 'monthly' | 'custom';
 export type RecurringStatus = 'active' | 'paused' | 'disabled';
 
+const getValidRecurringType = (type: any): RecurringType => {
+  return ['daily', 'weekly', 'monthly', 'custom'].includes(type) ? type : 'daily';
+};
+
 export const createRecurringTask = (
   task: Task, 
   type: RecurringType, 
@@ -35,6 +39,19 @@ export const disableRecurringTask = (task: Task): Task => {
 export const toggleRecurringStatus = (task: Task): Task => {
   const currentStatus = task.recurringStatus || 'active';
   const newStatus: RecurringStatus = currentStatus === 'active' ? 'paused' : 'active';
+
+  return {
+    ...task,
+    recurringStatus: newStatus,
+    nextRun: newStatus === 'active'
+      ? calculateNextRun(getValidRecurringType(task.recurringType), task.recurringInterval || 1)
+      : undefined
+  };
+};
+/*
+export const toggleRecurringStatus = (task: Task): Task => {
+  const currentStatus = task.recurringStatus || 'active';
+  const newStatus: RecurringStatus = currentStatus === 'active' ? 'paused' : 'active';
   
   return {
     ...task,
@@ -42,7 +59,7 @@ export const toggleRecurringStatus = (task: Task): Task => {
     nextRun: newStatus === 'active' ? calculateNextRun(task.recurringType || 'daily', task.recurringInterval || 1) : undefined
   };
 };
-
+*/
 export const getRecurringPattern = (
   type: RecurringType, 
   interval: number = 1, 
@@ -100,6 +117,16 @@ export const incrementRecurringCount = (task: Task): Task => {
     ...task,
     recurringCount: (task.recurringCount || 0) + 1,
     lastRun: new Date().toISOString(),
+    nextRun: calculateNextRun(getValidRecurringType(task.recurringType), task.recurringInterval || 1)
+  };
+};
+/*
+export const incrementRecurringCount = (task: Task): Task => {
+  return {
+    ...task,
+    recurringCount: (task.recurringCount || 0) + 1,
+    lastRun: new Date().toISOString(),
     nextRun: calculateNextRun(task.recurringType || 'daily', task.recurringInterval || 1)
   };
 };
+*/
