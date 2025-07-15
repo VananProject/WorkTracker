@@ -45,7 +45,7 @@ const UserDashboard: React.FC = () => {
       const token = localStorage.getItem('token');
       
       // Fetch user's tasks - adjust the endpoint according to your API
-      const response = await fetch(`http://localhost:5000/api/tasks/user`, {
+      const response = await fetch(`http://bp.backend.vananpicture.com/api/tasks/user`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
