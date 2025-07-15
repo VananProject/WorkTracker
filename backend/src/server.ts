@@ -87,42 +87,54 @@
 //   });
 
 // export default app;
+
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Import TypeScript routes
 import authRoutes from './routes/auth.routes';
 import taskRoutes from './routes/task.routes';
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/taskDB';
 
-// CORS configuration
+// ✅ CORS Configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'https://bp.vananpicture.com' // ✅ Production frontend domain
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-    'https://bp.backend.vananpicture.com'
-  ],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS: ' + origin));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 204
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ✅ Allow preflight OPTIONS requests
+app.options('*', cors());
 
-// Use TypeScript routes
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
-
-console.log('✅ TypeScript routes loaded successfully');
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -134,7 +146,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
+// 404 Handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
+
+// Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
   res.status(500).json({
@@ -144,40 +164,19 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
-});
-
-const PORT = process.env.PORT || 5000;
-
-// MongoDB Compass (Local) connection
-const localUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/taskDB';
-
-mongoose.connect(localUri)
+// MongoDB Connection
+mongoose.connect(MONGO_URI)
   .then(() => {
-    console.log('✅ MongoDB Compass connected successfully');
-    console.log('🗄️  Connected to database: taskDB');
-    console.log('🌐 Connection Type: Local MongoDB');
-    console.log('📍 URI: mongodb://localhost:27017/taskDB');
+    console.log('✅ MongoDB connected');
     app.listen(PORT, () => {
-      console.log(`🚀 TypeScript Server running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🌐 CORS enabled for: localhost:3000, localhost:5173`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
       console.log(`📋 Routes: /api/auth, /api/tasks`);
     });
   })
   .catch((error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('❌ MongoDB Compass connection error:', errorMessage);
-    console.error('💡 Make sure MongoDB is running locally:');
-    console.error('   - Windows: Start MongoDB service or run mongod');
-    console.error('   - macOS: brew services start mongodb-community');
-    console.error('   - Linux: sudo systemctl start mongod');
-    console.error('   - Or start MongoDB Compass and ensure local connection is available');
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ MongoDB connection error:', msg);
     process.exit(1);
   });
 
