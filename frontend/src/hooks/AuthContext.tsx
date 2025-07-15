@@ -329,7 +329,7 @@ const signup = async (
   dispatch({ type: 'LOGIN_START' });
 
   try {
-    const response = await fetch('http://bp.vananpicture.com:5000/api/auth/signup', {
+    const response = await fetch('https://bp.vananpicture.com:5000/api/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
