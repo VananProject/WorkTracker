@@ -17,7 +17,7 @@ export class AppModule {
 
   private setupMiddleware(): void {
     this.app.use(cors({
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: process.env.CORS_ORIGIN || 'https://bp.vananpicture.com',
       credentials: true
     }));
     this.app.use(express.json({ limit: '10mb' }));
