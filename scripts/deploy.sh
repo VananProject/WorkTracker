@@ -1,4 +1,5 @@
 #!/bin/bash
+export PM2_HOME=/etc/.pm2
 source "/root/.nvm/nvm.sh"
 nvm use 22
 
