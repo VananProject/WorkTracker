@@ -681,7 +681,7 @@
 
 // export default TaskHistoryTableEnhanced;
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -1389,17 +1389,31 @@ const loadAssignedTasks = async () => {
   }
 };
 
-  const refreshTasks = async () => {
-    try {
-      await Promise.all([
-        loadAllTasks(),
-        loadAssignedTasks()
-      ]);
-      console.log('✅ Tasks refreshed successfully');
-    } catch (error) {
-      console.error('Error refreshing tasks:', error);
-    }
-  };
+const refreshTasks = useCallback(async () => {
+  try {
+    console.log('🔄 TaskHistoryTableEnhanced: Starting comprehensive task refresh...');
+    
+    // Set loading state if you have one
+    // setIsLoading(true);
+    
+    // Refresh all task data sources
+    await Promise.all([
+      loadAllTasks(),
+      loadAssignedTasks(),
+      // Add any other task loading functions you have
+    ]);
+    
+    console.log('✅ TaskHistoryTableEnhanced: All tasks refreshed successfully');
+    
+    // Force re-categorization by updating a dependency
+    setCalculatedDurations(prev => ({ ...prev, _refresh: Date.now() }));
+    
+  } catch (error) {
+    console.error('❌ TaskHistoryTableEnhanced: Error refreshing tasks:', error);
+  } finally {
+    // setIsLoading(false);
+  }
+}, [loadAllTasks, loadAssignedTasks]);
 
    const getRecurringPattern = (type: string): string => {
     switch (type) {
@@ -1685,6 +1699,39 @@ const handleApproveTask = async (task: Task) => {
     });
   }
 };
+// Add this useEffect to watch for task updates
+useEffect(() => {
+  console.log('📊 Task data changed, updating categorized tasks...');
+  // This will trigger re-categorization when allTasks or assignedTasks change
+}, [allTasks, assignedTasks]);
+
+// Also add this to handle active tab changes
+useEffect(() => {
+  if (activeTab === 1 || activeTab === 2) {
+    console.log(`🔄 Switched to tab ${activeTab}, refreshing tasks...`);
+    setTimeout(() => {
+      refreshTasks();
+    }, 100);
+  }
+}, [activeTab, refreshTasks]);
+
+// Add this useEffect to watch for new tasks
+useEffect(() => {
+  // Auto-refresh when activeTab changes to Today's Tasks
+  if (activeTab === 2) {
+    console.log('🔄 Today\'s Tasks tab activated, refreshing...');
+    setTimeout(() => {
+      refreshTasks();
+    }, 300);
+  }
+}, [activeTab]);
+
+// Also add this to watch for task changes
+useEffect(() => {
+  // Refresh categorized tasks when allTasks or assignedTasks change
+  console.log('📊 Task data updated, recategorizing...');
+}, [allTasks, assignedTasks, filteredTasks]);
+
 // Add this function with your other handlers
 // Update the handleCreateNewTask function:
 const handleCreateNewTask = async () => {
@@ -1797,7 +1844,14 @@ const handleCreateNewTask = async () => {
       setNewTaskErrors({});
       
       console.log(`✅ Task "${taskData.taskName}" created successfully`);
+        // Switch to Today's Tasks tab automatically if the created task is for today
+      const isTaskForToday = newTaskData.startDate.isSame(dayjs(), 'day');
+      if (isTaskForToday) {
+        console.log('🔄 Switching to Today\'s Tasks tab');
+        setActiveTab(2); // Today's Tasks is index 2
+      }
       
+      console.log(`✅ Task "${taskData.taskName}" created successfully`);
     } else {
       throw new Error(response?.message || 'Failed to create task');
     }
@@ -2431,7 +2485,7 @@ const handleRejectTask = async (task: Task) => {
     <DialogContent>
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
     {/* Task Name - FIXED */}
-    <TextField
+    {/* <TextField
       fullWidth
       label="Task Name"
       value={newTaskData.taskName}
@@ -2440,10 +2494,10 @@ const handleRejectTask = async (task: Task) => {
       helperText={newTaskErrors.taskName}
       required
       placeholder="Enter task name..."
-    />
+    /> */}
 
     {/* Alternative: If you want to keep Autocomplete, fix the binding */}
-    {/* <Autocomplete
+    <Autocomplete
       freeSolo
       options={getUniqueTaskNames()}
       value={newTaskData.taskName}
@@ -2464,7 +2518,7 @@ const handleRejectTask = async (task: Task) => {
           required
         />
       )}
-    /> */}
+    />
 
     {/* Rest of your form fields remain the same */}
     <FormControl fullWidth>

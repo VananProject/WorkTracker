@@ -643,7 +643,8 @@ const TasksIAssignedToOthers: React.FC<TasksIAssignedToOthersProps> = ({
   onToggleRecurring,
   onApproveTask,
   onRejectTask,
-  onTaskUpdate
+  onTaskUpdate,
+  onRefreshTasks
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -741,7 +742,11 @@ const handleApprovalConfirm = async () => {
       }
       
       // Refresh task list
-      if (onTaskUpdate) {
+      // ✅ Use onRefreshTasks instead of onTaskUpdate
+      if (onRefreshTasks) {
+        console.log('🔄 TasksIAssignedToOthers: Refreshing tasks after approval');
+        onRefreshTasks();
+      } else if (onTaskUpdate) {
         onTaskUpdate();
       }
 
@@ -788,6 +793,10 @@ const handleApprovalConfirm = async () => {
     };
     
     onTableAction(updatedTask, 'start');
+     if (onRefreshTasks) {
+    console.log('🔄 TasksIAssignedToOthers: Refreshing tasks after recurring save');
+    onRefreshTasks();
+  }
     console.log(`✅ Task "${task.taskName}" recurring settings updated`);
   };
 
@@ -810,6 +819,10 @@ const handleApprovalConfirm = async () => {
     } else {
       onTableAction(task, action);
     }
+     if (onRefreshTasks) {
+    console.log('🔄 TasksIAssignedToOthers: Refreshing tasks after action');
+    setTimeout(() => onRefreshTasks(), 500);
+  }
   };
   // const handleConfirm = () => {
   //   if (selectedTask) {
@@ -1132,7 +1145,8 @@ const handleApprovalConfirm = async () => {
             </Box> */}
 
             {/* Existing resume/stop buttons */}
-            {/* {task.status === 'paused' && (
+           {false && task.status === 'paused' && (
+              
               <Button
                 size="small"
                 startIcon={<PlayArrow />}
@@ -1142,7 +1156,7 @@ const handleApprovalConfirm = async () => {
               >
                 Resume
               </Button>
-            )} */}
+            )}
 
             {/* ENHANCED: Multiple checks for approval needed */}
             {(() => {
