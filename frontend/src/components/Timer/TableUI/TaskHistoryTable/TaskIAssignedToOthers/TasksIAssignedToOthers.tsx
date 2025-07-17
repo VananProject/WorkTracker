@@ -627,6 +627,7 @@ interface TasksIAssignedToOthersProps {
     onApproveTask?: (task: Task, comments?: string) => void;
   onRejectTask?: (task: Task, reason?: string) => void;
    onTaskUpdate?: () => void; 
+   onRefreshTasks?: () => void;
 }
 
 const TasksIAssignedToOthers: React.FC<TasksIAssignedToOthersProps> = ({
@@ -1507,11 +1508,5 @@ const handleApprovalConfirm = async () => {
 export default TasksIAssignedToOthers;
 
 
-function onApproveTask(task: Task, comments: string) {
-  throw new Error('Function not implemented.');
-}
 
-function onRejectTask(task: Task, comments: string) {
-  throw new Error('Function not implemented.');
-}
 
