@@ -517,6 +517,11 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
       newExpanded.add(taskId);
     }
     setExpandedTasks(newExpanded);
+    if (onRefreshTasks) {
+        setTimeout(() => {
+          onRefreshTasks();
+        }, 500);
+      }
   };
 
  const handleTaskAction = (task: Task, action: 'resume' | 'stop' | 'start') => {
@@ -568,6 +573,10 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
   
   console.log('✅ Processing task:', taskToProcess);
   onTableAction(taskToProcess, action);
+   if (onRefreshTasks) {
+    console.log('🔄 TodaysTasks: Refreshing tasks after action');
+    setTimeout(() => onRefreshTasks(), 500); // Small delay to ensure backend update
+  }
 };
 // Add this at the beginning of the component
 const validTasks = useMemo(() => {
@@ -584,7 +593,9 @@ const validTasks = useMemo(() => {
     }
     
     return isValid;
+    
   });
+  
 }, [tasks]);
 
   const handleRecurringClick = (task: Task) => {
@@ -606,6 +617,10 @@ const validTasks = useMemo(() => {
   };
   
   onTableAction(updatedTask, 'start');
+   if (onRefreshTasks) {
+    console.log('🔄 TodaysTasks: Refreshing tasks after recurring save');
+    onRefreshTasks();
+  }
   console.log(`✅ Task "${task.taskName}" recurring settings updated`);
 };
 
@@ -769,39 +784,42 @@ const validTasks = useMemo(() => {
                       {getLastActivityTime(task)}
                     </Typography>
                   </TableCell>
-                  {/* <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {(task as any).isRecurring ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                          <Chip
-                            icon={<Repeat />}
-                            label={`${(task as any).recurringType || 'Active'}`}
-                            size="small"
-                            color={(task as any).recurringStatus === 'active' ? 'success' : 'warning'}
-                            variant="filled"
-                            onClick={() => handleRecurringClick(task)}
-                            sx={{ cursor: 'pointer' }}
-                          />
-                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
-                            {(task as any).recurringCount || 0} runs
-                          </Typography>
-                        </Box>
-                      ) : (
-                        <Button
-                          size="small"
-                          startIcon={<Repeat />}
-                          onClick={() => handleRecurringClick(task)}
-                          variant="outlined"
-                          color="primary"
-                        >
-                          Set Recurring
-                        </Button>
-                      )}
-                    </Box>
-                  </TableCell> */}
-                  {/* <TableCell>
+                  <TableCell>
+                    {false && (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    {(task as any).isRecurring ? (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Chip
+          icon={<Repeat />}
+          label={`${(task as any).recurringType || 'Active'}`}
+          size="small"
+          color={(task as any).recurringStatus === 'active' ? 'success' : 'warning'}
+          variant="filled"
+          onClick={() => handleRecurringClick(task)}
+          sx={{ cursor: 'pointer' }}
+        />
+        <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
+          {(task as any).recurringCount || 0} runs
+        </Typography>
+      </Box>
+    ) : (
+      <Button
+        size="small"
+        startIcon={<Repeat />}
+        onClick={() => handleRecurringClick(task)}
+        variant="outlined"
+        color="primary"
+      >
+        Set Recurring
+      </Button>
+    )}
+  </Box>
+)}
+
+                  </TableCell>
+                  <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {task.status === 'paused' && (
+                      {false && task.status === 'paused' && (
                         <Button
                           size="small"
                           startIcon={<PlayArrow />}
@@ -812,7 +830,7 @@ const validTasks = useMemo(() => {
                           Resume
                         </Button>
                       )}
-                      {['started', 'resumed'].includes(task.status) && (
+                      {false && ['started', 'resumed'].includes(task.status) && (
                         <Button
                           size="small"
                           startIcon={<Stop />}
@@ -822,7 +840,7 @@ const validTasks = useMemo(() => {
                           Stop
                         </Button>
                       )}
-                      {task.status === 'ended' && (
+                      {false && task.status === 'ended' && (
                         <Button
                           size="small"
                           startIcon={<PlayArrow />}
@@ -834,7 +852,7 @@ const validTasks = useMemo(() => {
                         </Button>
                       )}
                     </Box>
-                  </TableCell> */}
+                  </TableCell>
                 </TableRow>
                 
                 <TableRow>
