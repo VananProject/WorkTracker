@@ -489,6 +489,7 @@ interface TodaysTasksProps {
   calculatedDurations: Record<string, number>;
   onDurationCalculated: (taskId: string, duration: number) => void;
   onToggleRecurring?: (task: Task) => void;
+  onRefreshTasks?: () => void;
 }
 
 const TodaysTasks: React.FC<TodaysTasksProps> = ({
@@ -499,7 +500,8 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
   currentUser,
   calculatedDurations,
   onDurationCalculated,
-  onToggleRecurring
+  onToggleRecurring,
+  onRefreshTasks
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);

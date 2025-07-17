@@ -1,4 +1,340 @@
+// import React, { useState, useMemo } from 'react';
+// import {
+//   Box,
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableContainer,
+//   TableHead,
+//   TableRow,
+//   Paper,
+//   Chip,
+//   IconButton,
+//   Button,
+//   TablePagination,
+//   Typography,
+//   Collapse
+// } from '@mui/material';
+// import {
+//   ExpandMore,
+//   ExpandLess,
+//   PlayArrow,
+//   Stop,
+//   Person,
+//   Business,
+//   Repeat
+// } from '@mui/icons-material';
+// // import ActivityTimeline from './ActivityTimeline';
+// // import SummaryStatistics from './SummaryStatistics';
+// // import { Task } from '../types/TaskHistoryTypes';
+// import { getLastActivityTime } from '../utils/dateUtils';
+// import ActivityTimeline from '../components/ActivityTimeline';
+// import SummaryStatistics from '../components/SummaryStatistics';
+// import type { Task } from '../types/TaskHistoryTypes';
 
+// interface TasksAssignedToMeProps {
+//   tasks: Task[];
+//   formatTime: (seconds: number) => string;
+//   onTableAction: (task: Task, action: 'resume' | 'stop' | 'start') => void;
+//   isRunning: boolean;
+//   currentUser: any;
+//   calculatedDurations: Record<string, number>;
+//   onDurationCalculated: (taskId: string, duration: number) => void;
+//   onToggleRecurring?: (task: Task) => void;
+// }
+
+// const TasksAssignedToMe: React.FC<TasksAssignedToMeProps> = ({
+//   tasks,
+//   formatTime,
+//   onTableAction,
+//   isRunning,
+//   currentUser,
+//   calculatedDurations,
+//   onDurationCalculated,
+//   onToggleRecurring
+// }) => {
+//   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+//   const [page, setPage] = useState(0);
+//   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+//   const handleToggleTaskExpansion = (taskId: string) => {
+//     const newExpanded = new Set(expandedTasks);
+//     if (newExpanded.has(taskId)) {
+//       newExpanded.delete(taskId);
+//     } else {
+//       newExpanded.add(taskId);
+//     }
+//     setExpandedTasks(newExpanded);
+//   };
+
+//   const handleTaskAction = (task: Task, action: 'resume' | 'stop' | 'start') => {
+//     if (action === 'resume' || action === 'start') {
+//       const enhancedTask = {
+//         ...task,
+//         elapsedTime: task.totalDuration || 0,
+//         totalDuration: task.totalDuration || 0,
+//         resumedAt: new Date().toISOString(),
+//         id: task.taskId || task.id || '',
+//         taskId: task.taskId || task.id || '',
+//         assignedBy: (task as any).assignedBy,
+//         assignedTo: (task as any).assignedTo,
+//         assignedByEmail: (task as any).assignedByEmail,
+//         assignedToEmail: (task as any).assignedToEmail,
+//         isAssigned: (task as any).isAssigned
+//       };
+//       onTableAction(enhancedTask, action);
+//     } else {
+//       onTableAction(task, action);
+//     }
+//   };
+
+//   const getTaskDuration = (task: Task): number => {
+//     if (calculatedDurations[task.taskId] !== undefined) {
+//       return calculatedDurations[task.taskId];
+//     }
+//     return task.totalDuration || 0;
+//   };
+
+//   const getStatusColor = (status: string) => {
+//     switch (status) {
+//       case 'started': return 'success';
+//       case 'paused': return 'warning';
+//       case 'resumed': return 'info';
+//       case 'ended': return 'default';
+//       default: return 'default';
+//     }
+//   };
+
+//   const getTypeIcon = (type: string) => {
+//     return type === 'meeting' ? <Business fontSize="small" /> : <Person fontSize="small" />;
+//   };
+
+//   const getAssignmentInfo = (task: Task) => {
+//     const assignedBy = (task as any).assignedBy || (task as any).assignedByEmail || (task as any).createdBy;
+//     const assignedTo = (task as any).assignedTo || (task as any).assignedToEmail;
+//     const userEmail = currentUser?.email || currentUser?.userEmail;
+    
+//     const assignedByStr = typeof assignedBy === 'string' ? assignedBy : '';
+//     const assignedToStr = typeof assignedTo === 'string' ? assignedTo : '';
+    
+//     if (assignedByStr === userEmail && assignedToStr && assignedToStr !== userEmail) {
+//       return 'Assigned by me';
+//     } else if (assignedToStr === userEmail && assignedByStr && assignedByStr !== userEmail) {
+//       const assignerName = assignedByStr.includes('@') ? assignedByStr.split('@')[0] : assignedByStr;
+//       return `Assigned by ${assignerName}`;
+//     } else if (assignedByStr === userEmail) {
+//       return 'Self-assigned';
+//     } else {
+//       return 'Self-created';
+//     }
+//   };
+
+//   const getUserDisplayName = (task: Task) => {
+//     return task.username || task.userEmail?.split('@')[0] || 'Unknown';
+//   };
+
+//   const paginatedTasks = useMemo(() => {
+//     const startIndex = page * rowsPerPage;
+//     return tasks.slice(startIndex, startIndex + rowsPerPage);
+//   }, [tasks, page, rowsPerPage]);
+
+//   const handlePageChange = (event: unknown, newPage: number) => {
+//     setPage(newPage);
+//   };
+
+//   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+//     setRowsPerPage(parseInt(event.target.value, 10));
+//     setPage(0);
+//   };
+
+//   if (tasks.length === 0) {
+//     return (
+//       <Box sx={{ textAlign: 'center', py: 4 }}>
+//         <Typography variant="h6" color="textSecondary" gutterBottom>
+//           No Tasks Assigned to You
+//         </Typography>
+//         <Typography variant="body2" color="textSecondary">
+//           No tasks assigned to you found matching the current filters.
+//         </Typography>
+//       </Box>
+//     );
+//   }
+
+//   return (
+//     <>
+//       <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
+//         <Table stickyHeader size="small">
+//           <TableHead>
+//             <TableRow>
+//               <TableCell>Task Details</TableCell>
+//               <TableCell>Type</TableCell>
+//               <TableCell>Status</TableCell>
+//               <TableCell>Duration</TableCell>
+//               <TableCell>Assignment Info</TableCell>
+//               <TableCell>Username</TableCell>
+//               <TableCell>Last Activity</TableCell>
+//               <TableCell>Recurring</TableCell>
+//               <TableCell>Actions</TableCell>
+//             </TableRow>
+//           </TableHead>
+//           <TableBody>
+//             {paginatedTasks.map((task: Task) => (
+//               <React.Fragment key={task.taskId}>
+//                 <TableRow hover>
+//                   <TableCell>
+//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                       <IconButton 
+//                         size="small"
+//                         onClick={() => handleToggleTaskExpansion(task.taskId)}
+//                       >
+//                         {expandedTasks.has(task.taskId) ? <ExpandLess /> : <ExpandMore />}
+//                       </IconButton>
+//                       <Box>
+//                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
+//                           {task.taskName}
+//                         </Typography>
+//                         <Typography variant="caption" color="textSecondary">
+//                           ID: {task.taskId}
+//                         </Typography>
+//                       </Box>
+//                     </Box>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+//                       {getTypeIcon(task.type)}
+//                       <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+//                         {task.type}
+//                       </Typography>
+//                     </Box>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Chip
+//                       label={task.status}
+//                       size="small"
+//                       color={getStatusColor(task.status) as any}
+//                       variant="outlined"
+//                     />
+//                   </TableCell>
+//                   <TableCell>
+//                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+//                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+//                         {formatTime(getTaskDuration(task))}
+//                       </Typography>
+//                       {calculatedDurations[task.taskId] !== undefined && 
+//                        calculatedDurations[task.taskId] !== (task.totalDuration || 0) && (
+//                         <Chip
+//                           label="✓ Accurate"
+//                           size="small"
+//                           color="success"
+//                           variant="outlined"
+//                           sx={{ height: 16, fontSize: '0.6rem', mt: 0.5 }}
+//                         />
+//                       )}
+//                     </Box>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Typography variant="body2">
+//                       {getAssignmentInfo(task)}
+//                     </Typography>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Typography variant="body2">
+//                       {getUserDisplayName(task)}
+//                     </Typography>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Typography variant="caption">
+//                       {getLastActivityTime(task)}
+//                     </Typography>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//                       {(task as any).isRecurring ? (
+//                         <Chip
+//                           icon={<Repeat />}
+//                           label={(task as any).recurringType || 'Active'}
+//                           size="small"
+//                           color="info"
+//                           variant="outlined"
+//                         />
+//                       ) : (
+//                         <Button
+//                           size="small"
+//                           startIcon={<Repeat />}
+//                           onClick={() => onToggleRecurring?.(task)}
+//                           variant="outlined"
+//                           color="primary"
+//                         >
+//                           Set Recurring
+//                         </Button>
+//                       )}
+//                     </Box>
+//                   </TableCell>
+//                   <TableCell>
+//                     <Box sx={{ display: 'flex', gap: 0.5 }}>
+//                       {task.status === 'paused' && (
+//                         <Button
+//                           size="small"
+//                           startIcon={<PlayArrow />}
+//                           onClick={() => handleTaskAction(task, 'resume')}
+//                           disabled={isRunning}
+//                           color="success"
+//                         >
+//                           Resume
+//                         </Button>
+//                       )}
+//                       {['started', 'resumed'].includes(task.status) && (
+//                         <Button
+//                           size="small"
+//                           startIcon={<Stop />}
+//                           onClick={() => handleTaskAction(task, 'stop')}
+//                           color="error"
+//                         >
+//                           Stop
+//                         </Button>
+//                       )}
+//                     </Box>
+//                   </TableCell>
+//                 </TableRow>
+                
+//                 <TableRow>
+//                   <TableCell colSpan={9} sx={{ p: 0, border: 'none' }}>
+//                     <ActivityTimeline
+//                       task={task}
+//                       isExpanded={expandedTasks.has(task.taskId)}
+//                       formatTime={formatTime}
+//                       onDurationCalculated={onDurationCalculated}
+//                     />
+//                   </TableCell>
+//                 </TableRow>
+//               </React.Fragment>
+//             ))}
+//           </TableBody>
+//         </Table>
+//       </TableContainer>
+
+//       <TablePagination
+//         component="div"
+//         count={tasks.length}
+//         page={page}
+//         onPageChange={handlePageChange}
+//         rowsPerPage={rowsPerPage}
+//         onRowsPerPageChange={handleRowsPerPageChange}
+//         rowsPerPageOptions={[5, 10, 25, 50]}
+//         showFirstButton
+//         showLastButton
+//       />
+
+//       <SummaryStatistics
+//         data={tasks}
+//         isAdmin={false}
+//         formatTime={formatTime}
+//       />
+//     </>
+//   );
+// };
+
+// export default TasksAssignedToMe;
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -48,6 +384,7 @@ interface TasksAssignedToMeProps {
   calculatedDurations: Record<string, number>;
   onDurationCalculated: (taskId: string, duration: number) => void;
   onToggleRecurring?: (task: Task) => void;
+  onRefreshTasks?: () => void;
 }
 
 interface NotificationState {
@@ -75,17 +412,11 @@ const isRecurringTaskExpired = (task: Task): boolean => {
     recurringCount
   });
 
-  // ✅ Check if manually disabled/completed
-  if (recurringStatus === 'completed' || recurringStatus === 'disabled') {
-    console.log(`❌ Task "${taskName}" has inactive status: ${recurringStatus}`);
-    return true;
-  }
-
-  // ✅ Check end date from recurringOptions
+  // Check end date from recurringOptions
   if (recurringOptions?.endDate) {
     const endDate = new Date(recurringOptions.endDate);
     const now = new Date();
-    endDate.setHours(23, 59, 59, 999); // End of the end date
+    endDate.setHours(23, 59, 59, 999);
     
     console.log(`📅 Checking end date: ${endDate.toDateString()} vs now: ${now.toDateString()}`);
     
@@ -95,7 +426,7 @@ const isRecurringTaskExpired = (task: Task): boolean => {
     }
   }
 
-  // ✅ Check end date from endConditions
+  // Check end date from endConditions
   if (endConditions?.endDate) {
     const endDate = new Date(endConditions.endDate);
     const now = new Date();
@@ -109,7 +440,7 @@ const isRecurringTaskExpired = (task: Task): boolean => {
     }
   }
 
-  // ✅ Check maximum runs/occurrences
+  // Check maximum runs
   if (recurringOptions?.endCondition === 'after' && recurringOptions?.repeatCount) {
     console.log(`🔢 Checking run count: ${recurringCount}/${recurringOptions.repeatCount}`);
     
@@ -119,16 +450,15 @@ const isRecurringTaskExpired = (task: Task): boolean => {
     }
   }
 
-  // ✅ Check if recurring pattern has specific end conditions
-  if (recurringOptions?.endCondition === 'never') {
-    console.log(`♾️ Task "${taskName}" set to never end`);
-    return false; // Never expires
+  // Check status
+  if (recurringStatus === 'completed' || recurringStatus === 'disabled') {
+    console.log(`❌ Task "${taskName}" has inactive status: ${recurringStatus}`);
+    return true;
   }
 
   console.log(`✅ Task "${taskName}" is still active`);
   return false;
 };
-
 const isRecurringTaskExpiringSoon = (task: Task, daysThreshold: number = 7): boolean => {
   if (!(task as any).isRecurring) {
     return false;
@@ -168,7 +498,8 @@ const TasksAssignedToMe: React.FC<TasksAssignedToMeProps> = ({
   currentUser,
   calculatedDurations,
   onDurationCalculated,
-  onToggleRecurring
+  onToggleRecurring,
+   onRefreshTasks
 }) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -290,16 +621,83 @@ const isTaskApproved = useCallback((task: Task): boolean => {
   
   return false;
 }, []);
+
 const handleTaskAction = (task: Task, action: 'resume' | 'stop' | 'start') => {
-  console.log('🎯 Restarting existing task:', task.taskName, 'Action:', action);
+  console.log('🎯 TasksAssignedToMe.handleTaskAction:', { 
+    task: task.taskName, 
+    action, 
+    currentStatus: task.status 
+  });
   
-  // ✅ SIMPLIFIED: Just pass the original task with minimal changes
-  if (action === 'start') {
-    // For restart, treat it as resume of existing task
-    onTableAction(task, 'resume');
-  } else {
-    // For other actions, pass as-is
-    onTableAction(task, action);
+  // Create base task with proper typing
+  const baseTask: Task = {
+    ...task,
+    // Ensure required fields are present
+    taskId: task.taskId,
+    taskName: task.taskName,
+    type: task.type,
+    totalDuration: task.totalDuration || 0,
+    userEmail: task.userEmail,
+    username: task.username || task.userEmail?.split('@')[0] || 'Unknown',
+    activities: task.activities || []
+  };
+ if (onRefreshTasks) {
+        setTimeout(() => {
+          onRefreshTasks();
+        }, 500);
+      }
+    
+  if (action === 'resume') {
+    const enhancedTask: Task = {
+      ...baseTask,
+      status: 'resumed' as const, // ✅ Proper typing with const assertion
+      elapsedTime: task.totalDuration || 0,
+      resumedAt: new Date().toISOString(),
+      id: task.taskId || task.id || ''
+    };
+    onTableAction(enhancedTask, 'resume');
+    
+  } else if (action === 'start') {
+    if (task.status === 'ended') {
+      // Restart ended task
+      const restartTask: Task = {
+        ...baseTask,
+        status: 'started' as const, // ✅ Proper typing
+        elapsedTime: task.totalDuration || 0,
+        startTime: new Date().toISOString(),
+        id: task.taskId || task.id || ''
+      };
+      onTableAction(restartTask, 'resume'); // Use resume to update existing task
+    } else if (task.status === 'paused') {
+      // Resume paused task
+      const resumeTask: Task = {
+        ...baseTask,
+        status: 'resumed' as const, // ✅ Proper typing
+        elapsedTime: task.totalDuration || 0,
+        resumedAt: new Date().toISOString(),
+        id: task.taskId || task.id || ''
+      };
+      onTableAction(resumeTask, 'resume');
+    } else {
+      // Start new task
+      const startTask: Task = {
+        ...baseTask,
+        status: 'started' as const, // ✅ Proper typing
+        startTime: new Date().toISOString(),
+        elapsedTime: 0,
+        id: task.taskId || task.id || ''
+      };
+      onTableAction(startTask, 'start');
+    }
+    
+  } else if (action === 'stop') {
+    const stopTask: Task = {
+      ...baseTask,
+      status: 'ended' as const, // ✅ Proper typing
+      endTime: new Date().toISOString(),
+      id: task.taskId || task.id || ''
+    };
+    onTableAction(stopTask, 'stop');
   }
 };
 // Add this helper function to parse estimated time string to seconds
@@ -560,116 +958,51 @@ const handleTelegramClick = async (task: Task) => {
     }
     return 'Self-assigned';
   };
-// Add this useEffect to debug what tasks are being received
-useEffect(() => {
-  console.log('🔍 === TASK ANALYSIS ===');
-  console.log('📊 Total tasks received:', tasks?.length || 0);
-  console.log('👤 Current user email:', currentUser?.email);
-  
-  if (!tasks || tasks.length === 0) {
-    console.log('❌ No tasks received');
-    return;
-  }
-  
-  // Analyze all tasks
-  tasks.forEach((task, index) => {
-    const assignedToEmail = (task as any).assignedToEmail;
-    const userEmail = task.userEmail;
-    const createdBy = (task as any).createdBy;
-    const isRecurring = (task as any).isRecurring;
-    const status = task.status;
-    
-    console.log(`\n📋 Task ${index + 1}: "${task.taskName}"`);
-    console.log('   - Status:', status);
-    console.log('   - Assigned to:', assignedToEmail);
-    console.log('   - User email:', userEmail);
-    console.log('   - Created by:', createdBy);
-    console.log('   - Is recurring:', isRecurring);
-    console.log('   - Current user:', currentUser?.email);
-    console.log('   - Is mine?', 
-      assignedToEmail === currentUser?.email || 
-      userEmail === currentUser?.email || 
-      createdBy === currentUser?.email
-    );
-  });
-  
-  // Count different types
-  const myTasks = tasks.filter(task => {
-    const assignedToEmail = (task as any).assignedToEmail;
-    const userEmail = task.userEmail;
-    const createdBy = (task as any).createdBy;
-    const currentEmail = currentUser?.email;
-    
-    return assignedToEmail === currentEmail || 
-           userEmail === currentEmail || 
-           createdBy === currentEmail;
-  });
-  
-  const recurringTasks = tasks.filter(task => (task as any).isRecurring);
-  const myRecurringTasks = myTasks.filter(task => (task as any).isRecurring);
-  
-  console.log('\n📊 SUMMARY:');
-  console.log('   - Total tasks:', tasks.length);
-  console.log('   - My tasks:', myTasks.length);
-  console.log('   - Recurring tasks (all):', recurringTasks.length);
-  console.log('   - My recurring tasks:', myRecurringTasks.length);
-  
-}, [tasks, currentUser]);
-
-
-
-
-
-// ✅ SIMPLIFIED: Show all tasks passed to this component
+// Add this at the beginning of the component
 const validTasks = useMemo(() => {
-  console.log('🔍 TasksAssignedToMe - Starting validation');
-  console.log('📊 Tasks received:', tasks?.length || 0);
-  console.log('👤 Current user:', currentUser?.email);
-  
-  if (!tasks || tasks.length === 0) {
-    console.log('❌ No tasks received');
-    return [];
-  }
-  
-  // ✅ SIMPLIFIED FILTERING: Only remove duplicates and invalid tasks
   const filtered = tasks.filter((task, index, array) => {
-    // Basic validity
-    if (!task || !task.taskId || !task.taskName) {
-      console.log(`❌ Invalid task at index ${index}`);
+    // Check if task is valid
+    const isValid = task && 
+                   task.taskId && 
+                   task.taskName && 
+                   task.taskName !== 'Untitled Task' &&
+                   task.taskName.trim() !== '';
+    
+    if (!isValid) {
+      console.warn('⚠️ TasksAssignedToMe: Filtering out invalid task:', task);
       return false;
     }
     
-    // Remove duplicates
+    // Remove duplicates based on taskId
     const isDuplicate = array.findIndex(t => t.taskId === task.taskId) !== index;
     if (isDuplicate) {
-      console.log(`❌ Duplicate task: ${task.taskName}`);
+      console.warn('⚠️ TasksAssignedToMe: Filtering out duplicate task:', task.taskName, task.taskId);
+      return false;
+    }
+
+    // ✅ Filter out expired recurring tasks
+    if (isRecurringTaskExpired(task)) {
+      console.log(`🔄 TasksAssignedToMe: Filtering out expired recurring task: ${task.taskName}`);
       return false;
     }
     
-    console.log(`✅ Valid task: ${task.taskName} (Recurring: ${(task as any).isRecurring})`);
+    // ✅ NEW: Filter out approved tasks
+    if (isTaskApproved(task)) {
+      console.log(`✅ TasksAssignedToMe: Filtering out approved task: ${task.taskName}`);
+      return false;
+    }
+    
     return true;
   });
   
-  console.log('📊 FILTERING SUMMARY:', {
-    originalTasks: tasks.length,
-    validTasks: filtered.length,
-    filteredOut: tasks.length - filtered.length
-  });
-  
-  // Debug: Show final tasks
-  console.log('📋 Final tasks to display:');
-  filtered.forEach((task, index) => {
-    console.log(`${index + 1}. "${task.taskName}" - Status: ${task.status}, Recurring: ${(task as any).isRecurring || false}`);
+  console.log('📊 TasksAssignedToMe: Valid tasks after filtering:', {
+    original: tasks.length,
+    afterValidation: filtered.length,
+    filtered: tasks.length - filtered.length
   });
   
   return filtered;
-}, [tasks, currentUser]);
-
-
-
-
-
-
+}, [tasks, isRecurringTaskExpired, isTaskApproved]);
 
 // Use validTasks instead of tasks in your component render
 // Enhanced helper function with detailed logging
@@ -914,59 +1247,41 @@ const paginatedTasks = useMemo(() => {
   </Tooltip>
 </TableCell>
                   <TableCell>
-  <Box sx={{ display: 'flex', gap: 0.5 }}>
-    {task.status === 'paused' && (
-      <Button
-        size="small"
-        startIcon={<PlayArrow />}
-        onClick={() => handleTaskAction(task, 'resume')}
-        disabled={isRunning}
-        color="success"
-      >
-        Resume
-      </Button>
-    )}
-    
-    {['started', 'resumed'].includes(task.status) && (
-      <Button
-        size="small"
-        startIcon={<Stop />}
-        onClick={() => handleTaskAction(task, 'stop')}
-        color="error"
-      >
-        Stop
-      </Button>
-    )}
-    
-    {/* ✅ FORCE SHOW: Restart button for ended tasks */}
-    {task.status === 'ended' && (
-      <Button
-        size="small"
-        startIcon={<PlayArrow />}
-        onClick={() => handleTaskAction(task, 'start')}
-        disabled={isRunning}
-        color="primary"
-      >
-        Restart
-      </Button>
-    )}
-    
-    {/* ✅ FORCE SHOW: Restart button for ALL recurring tasks (unless currently running) */}
-    {(task as any).isRecurring && !['started', 'resumed'].includes(task.status) && (
-      <Button
-        size="small"
-        startIcon={<PlayArrow />}
-        onClick={() => handleTaskAction(task, 'start')}
-        disabled={isRunning}
-        color="primary"
-        variant={task.status === 'ended' ? 'outlined' : 'contained'}
-      >
-        Restart
-      </Button>
-    )}
-  </Box>
-</TableCell>
-
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {task.status === 'paused' && (
+                        <Button
+                          size="small"
+                          startIcon={<PlayArrow />}
+                          onClick={() => handleTaskAction(task, 'resume')}
+                          disabled={isRunning}
+                          color="success"
+                        >
+                          Resume
+                        </Button>
+                      )}
+                      {['started', 'resumed'].includes(task.status) && (
+                        <Button
+                          size="small"
+                          startIcon={<Stop />}
+                          onClick={() => handleTaskAction(task, 'stop')}
+                          color="error"
+                        >
+                          Stop
+                        </Button>
+                      )}
+                      {task.status === 'ended' && (
+                        <Button
+                          size="small"
+                          startIcon={<PlayArrow />}
+                          onClick={() => handleTaskAction(task, 'start')}
+                          disabled={isRunning}
+                          color="primary"
+                        >
+                          Restart
+                        </Button>
+                      )}
+                    </Box>
+                  </TableCell>
                 </TableRow>
                 
                 <TableRow>
@@ -1070,3 +1385,4 @@ const paginatedTasks = useMemo(() => {
 };
 
 export default TasksAssignedToMe;
+
