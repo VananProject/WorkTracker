@@ -12,6 +12,7 @@ import TaskTimerDialogs from './TimerDialog/TaskTimerDialogs';
 import TaskHistoryTableEnhanced from '../TableUI/TaskHistoryTable/TaskHistoryTableEnhanced';
 import { useSelectiveRefresh } from '../../../hooks/useSelectiveRefresh';
 import { exportTaskLevelReport } from '../../../services/taskService';
+import DailyTimeTrackingCard from './DailyTimeTrackingCard';
 
 // interface TaskTimerUIProps {
 //   // State props
@@ -367,7 +368,17 @@ const handleTaskAssigned = useCallback(async () => {
      {/* Assigned Tasks Section - ENHANCED WIDTH AND RESPONSIVENESS */}
 
 
-
+ <DailyTimeTrackingCard
+  tasks={[...getFilteredUserTasks(), ...allTasks, ...assignedTasks].filter((task, index, self) => {
+    // Remove duplicates by taskId
+    const firstIndex = self.findIndex(t => t.taskId === task.taskId);
+    return index === firstIndex;
+  })}
+  formatTime={formatTime}
+  currentUser={currentUser}
+  isRunning={state.isRunning}
+  currentTask={getFilteredUserTasks().find((task: { status: string; }) => ['started', 'resumed'].includes(task.status)) || null}
+/>
       {/* Timer Display */}
       <TimerDisplay
         elapsedTime={state.elapsedTime}
@@ -385,6 +396,7 @@ const handleTaskAssigned = useCallback(async () => {
         pausedTaskNotification={pausedTaskNotification}
         onSetAlarmNotification={onSetAlarmNotification}
         onSetPausedTaskNotification={onSetPausedTaskNotification}
+        currentUser={currentUser} 
       />
 
       {/* Control Buttons */}
