@@ -368,17 +368,14 @@ const handleTaskAssigned = useCallback(async () => {
      {/* Assigned Tasks Section - ENHANCED WIDTH AND RESPONSIVENESS */}
 
 
- <DailyTimeTrackingCard
-  tasks={[...getFilteredUserTasks(), ...allTasks, ...assignedTasks].filter((task, index, self) => {
-    // Remove duplicates by taskId
-    const firstIndex = self.findIndex(t => t.taskId === task.taskId);
-    return index === firstIndex;
-  })}
+<DailyTimeTrackingCard
+  tasks={getFilteredUserTasks()} // Only pass current user's tasks
   formatTime={formatTime}
   currentUser={currentUser}
   isRunning={state.isRunning}
   currentTask={getFilteredUserTasks().find((task: { status: string; }) => ['started', 'resumed'].includes(task.status)) || null}
 />
+
       {/* Timer Display */}
       <TimerDisplay
         elapsedTime={state.elapsedTime}

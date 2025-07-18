@@ -21,6 +21,14 @@ interface DailyTimeTrackingData {
   workdayProgress: number;
   todaysTasks: Task[];
 }
+// Add the same helper function to useDailyTimeTracking.ts if needed
+const formatTimeSimple = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 // Helper function to safely convert timestamp to Date
 const safeToDate = (timestamp: string | number | Date | undefined): Date | null => {
@@ -82,8 +90,24 @@ export const useDailyTimeTracking = (
   return useMemo(() => {
     const userEmail = currentUser?.email || currentUser?.userEmail;
     
-    // Filter today's tasks
+    if (!userEmail) {
+      console.warn('No current user email found for daily tracking');
+      return {
+        taskSummaries: [],
+        totalTaskMinutes: 0,
+        totalMeetingMinutes: 0,
+        totalTaskSeconds: 0,
+        totalMeetingSeconds: 0,
+        totalMinutes: 0,
+        totalSeconds: 0,
+        workdayProgress: 0,
+        todaysTasks: []
+      };
+    }
+    
+    // Filter today's tasks - ONLY for current user
     const todaysTasks = tasks.filter(task => {
+      // STRICT: Only include tasks that belong to the current user
       const isUserTask = task.userEmail === userEmail || 
                         (task as any).assignedToEmail === userEmail;
       
@@ -126,7 +150,7 @@ export const useDailyTimeTracking = (
           return dateA.getTime() - dateB.getTime();
         });
 
-let sessionStart = null as Date | null;
+        let sessionStart = null as Date | null;
         
         todayActivities.forEach((activity: any) => {
           const activityTime = safeToDate(activity.timestamp);
@@ -142,18 +166,20 @@ let sessionStart = null as Date | null;
             
             case 'paused':
             case 'ended':
-              if (sessionStart) {
+              if (sessionStart !== null && activityTime) {
                 const sessionDuration = (activityTime.getTime() - sessionStart.getTime()) / 1000;
-                taskTotalSeconds += sessionDuration;
+                // Round to remove milliseconds
+                taskTotalSeconds += Math.floor(sessionDuration);
                 sessionStart = null;
               }
               break;
           }
         });
 
-        if (sessionStart && ['started', 'resumed'].includes(task.status)) {
+        if (sessionStart !== null && ['started', 'resumed'].includes(task.status)) {
           const currentDuration = (currentTime.getTime() - sessionStart.getTime()) / 1000;
-          taskTotalSeconds += currentDuration;
+          // Round to remove milliseconds
+          taskTotalSeconds += Math.floor(currentDuration);
         }
       }
 
@@ -163,13 +189,14 @@ let sessionStart = null as Date | null;
           safeToDate(task.createdAt)! >= todayStart && 
           safeToDate(task.createdAt)! <= todayEnd;
         
-        if (createdToday) {
-          taskTotalSeconds = task.totalDuration;
+                if (createdToday) {
+          // Round to remove milliseconds
+          taskTotalSeconds = Math.floor(task.totalDuration);
         }
       }
 
       if (taskTotalSeconds > 0) {
-        const taskMinutes = Math.round(taskTotalSeconds / 60);
+        const taskMinutes = Math.floor(taskTotalSeconds / 60); // Use Math.floor instead of Math.round
         const isActive = ['started', 'resumed'].includes(task.status) && 
                         (currentTask?.taskId === task.taskId || isRunning);
 
@@ -178,7 +205,7 @@ let sessionStart = null as Date | null;
           taskId: task.taskId,
           type: task.type,
           totalMinutes: taskMinutes,
-          totalSeconds: taskTotalSeconds,
+          totalSeconds: Math.floor(taskTotalSeconds), // Ensure no decimals
           status: task.status,
           isActive,
           lastActivity: lastActivityTime
@@ -186,10 +213,10 @@ let sessionStart = null as Date | null;
 
         if (task.type === 'meeting') {
           totalMeetingMinutes += taskMinutes;
-          totalMeetingSeconds += taskTotalSeconds;
+          totalMeetingSeconds += Math.floor(taskTotalSeconds);
         } else {
           totalTaskMinutes += taskMinutes;
-          totalTaskSeconds += taskTotalSeconds;
+          totalTaskSeconds += Math.floor(taskTotalSeconds);
         }
       }
     });
@@ -213,3 +240,4 @@ let sessionStart = null as Date | null;
     };
   }, [tasks, currentUser, currentTime, currentTask, isRunning, todayStart, todayEnd]);
 };
+
