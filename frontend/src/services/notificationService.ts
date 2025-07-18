@@ -26,11 +26,17 @@ class NotificationService {
     return false;
   }
 
-  // Show notification for paused task
-  showPausedTaskNotification(taskName: string, pausedMinutes: number): void {
+  // Show notification for paused task - ONLY for current user
+  showPausedTaskNotification(taskName: string, pausedMinutes: number, currentUserEmail: string, taskOwnerEmail: string): void {
+    // Only show notification if the task belongs to the current user
+    if (currentUserEmail !== taskOwnerEmail) {
+      console.log(`Skipping notification for task "${taskName}" - not owned by current user`);
+      return;
+    }
+
     if (Notification.permission === 'granted') {
-      const notification = new Notification('⏸️ Paused Task Reminder', {
-        body: `Task "${taskName}" has been paused for ${pausedMinutes} minutes. Consider resuming or stopping it.`,
+      const notification = new Notification('⏸️ Your Paused Task Reminder', {
+        body: `Your task "${taskName}" has been paused for ${pausedMinutes} minutes. Consider resuming or stopping it.`,
         icon: '/favicon.ico',
         tag: `paused-task-reminder-${taskName}`,
         requireInteraction: true
@@ -48,8 +54,14 @@ class NotificationService {
     }
   }
 
-  // Start monitoring a paused task
-  startPausedTaskMonitoring(taskId: string, taskName: string, pausedAt?: Date): void {
+  // Start monitoring a paused task - ONLY for current user
+  startPausedTaskMonitoring(taskId: string, taskName: string, currentUserEmail: string, taskOwnerEmail: string, pausedAt?: Date): void {
+    // Only monitor if the task belongs to the current user
+    if (currentUserEmail !== taskOwnerEmail) {
+      console.log(`Skipping monitoring for task "${taskName}" - not owned by current user`);
+      return;
+    }
+
     // Clear existing timer if any
     this.stopPausedTaskMonitoring(taskId);
 
@@ -65,7 +77,7 @@ class NotificationService {
     // If already past 30 minutes, show notification immediately and set up recurring
     if (timeUntilFirstNotification <= 0) {
       const minutesPaused = Math.floor(timeSincePaused / (60 * 1000));
-      this.showPausedTaskNotification(taskName, minutesPaused);
+      this.showPausedTaskNotification(taskName, minutesPaused, currentUserEmail, taskOwnerEmail);
       timeUntilFirstNotification = thirtyMinutes; // Next notification in 30 minutes
     }
 
@@ -75,14 +87,14 @@ class NotificationService {
       const totalPausedTime = currentTime.getTime() - pausedTime.getTime();
       const minutesPaused = Math.floor(totalPausedTime / (60 * 1000));
       
-      this.showPausedTaskNotification(taskName, minutesPaused);
+      this.showPausedTaskNotification(taskName, minutesPaused, currentUserEmail, taskOwnerEmail);
       
       // Set recurring timer for every 30 minutes
       const recurringTimer = window.setInterval(() => {
         const now = new Date();
         const totalTime = now.getTime() - pausedTime.getTime();
         const minutes = Math.floor(totalTime / (60 * 1000));
-        this.showPausedTaskNotification(taskName, minutes);
+        this.showPausedTaskNotification(taskName, minutes, currentUserEmail, taskOwnerEmail);
       }, thirtyMinutes);
 
       this.pausedTaskTimers.set(taskId, recurringTimer);

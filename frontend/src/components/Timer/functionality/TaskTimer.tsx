@@ -241,43 +241,50 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
-  // Check for paused tasks every 30 minutes
-  useEffect(() => {
-    const checkPausedTasks = () => {
-      const pausedTasks = allTasks.filter(task => task.status === 'paused');
-      
-      pausedTasks.forEach(task => {
-        const lastActivity = task.activities?.slice(-1)[0];
-        if (lastActivity && lastActivity.action === 'paused') {
-          const pausedTime = new Date(lastActivity.timestamp);
-          const now = new Date();
-          const timeDiff = now.getTime() - pausedTime.getTime();
-          const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+ // Update the paused task checking effect
+useEffect(() => {
+  const checkPausedTasks = () => {
+    const currentUserEmail = getCurrentUserEmail();
+    if (!currentUserEmail) return;
+
+    // Only check tasks that belong to the current user
+    const userPausedTasks = allTasks.filter(task => {
+      const isUserTask = task.userEmail === currentUserEmail || task.assignedToEmail === currentUserEmail;
+      return isUserTask && task.status === 'paused';
+    });
+    
+    userPausedTasks.forEach(task => {
+      const lastActivity = task.activities?.slice(-1)[0];
+      if (lastActivity && lastActivity.action === 'paused') {
+        const pausedTime = new Date(lastActivity.timestamp);
+        const now = new Date();
+        const timeDiff = now.getTime() - pausedTime.getTime();
+        const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+        
+        if (minutesDiff >= 30 && minutesDiff % 30 === 0) {
+          setPausedTaskNotification(`⏸️ Your task "${task.taskName}" has been paused for ${minutesDiff} minutes!`);
           
-          if (minutesDiff >= 30 && minutesDiff % 30 === 0) {
-            setPausedTaskNotification(`⏸️ Task "${task.taskName}" has been paused for ${minutesDiff} minutes!`);
-            
-            if (Notification.permission === 'granted') {
-              new Notification('⏸️ Paused Task Reminder', {
-                body: `Task "${task.taskName}" has been paused for ${minutesDiff} minutes. Consider resuming or stopping it.`,
-                icon: '/favicon.ico',
-                tag: `paused-task-${task.taskId}`,
-                requireInteraction: true
-              });
-            }
-            
-            alarmSound.playAlarmPattern().catch(() => {
-              console.log('Notification sound failed');
+          if (Notification.permission === 'granted') {
+            new Notification('⏸️ Your Paused Task Reminder', {
+              body: `Your task "${task.taskName}" has been paused for ${minutesDiff} minutes. Consider resuming or stopping it.`,
+              icon: '/favicon.ico',
+              tag: `paused-task-${task.taskId}`,
+              requireInteraction: true
             });
           }
+          
+          alarmSound.playAlarmPattern().catch(() => {
+            console.log('Notification sound failed');
+          });
         }
-      });
-    };
+      }
+    });
+  };
 
-    checkPausedTasks();
-    const interval = setInterval(checkPausedTasks, 60000);
-    return () => clearInterval(interval);
-  }, [allTasks]);
+  checkPausedTasks();
+  const interval = setInterval(checkPausedTasks, 60000);
+  return () => clearInterval(interval);
+}, [allTasks]);
 
   const formatTime = useCallback((seconds: number): string => {
     const hrs = Math.floor(seconds / 3600);
@@ -363,24 +370,33 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
-  const handlePause = async () => {
-    if (!state.currentTask) return;
+ // Update the handlePause function
+const handlePause = async () => {
+  if (!state.currentTask) return;
 
-    try {
-      await TaskService.pauseTask(state.currentTask.taskId, state.elapsedTime);
-      dispatch({ type: 'PAUSE_TASK' });
-      dispatch({ type: 'CLEAR_ERROR' });
-      
+  try {
+    await TaskService.pauseTask(state.currentTask.taskId, state.elapsedTime);
+    dispatch({ type: 'PAUSE_TASK' });
+    dispatch({ type: 'CLEAR_ERROR' });
+    
+    // Only start monitoring if this is the current user's task
+    const currentUserEmail = getCurrentUserEmail();
+    const taskOwnerEmail = state.currentTask.userEmail || state.currentTask.assignedToEmail;
+    
+    if (currentUserEmail === taskOwnerEmail) {
       notificationService.startPausedTaskMonitoring(
         state.currentTask.taskId, 
-        state.currentTask.taskName
+        state.currentTask.taskName,
+        currentUserEmail,
+        taskOwnerEmail
       );
-      
-      loadAllTasks();
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to pause task' });
     }
-  };
+    
+    loadAllTasks();
+  } catch (error) {
+    dispatch({ type: 'SET_ERROR', payload: 'Failed to pause task' });
+  }
+};
 
   const handleResume = async () => {
     if (!state.currentTask) return;

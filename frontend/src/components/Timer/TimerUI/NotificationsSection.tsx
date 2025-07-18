@@ -9,6 +9,7 @@ interface NotificationsSectionProps {
   pausedTaskNotification?: string | null;
   onSetAlarmNotification?: (message: string | null) => void;
   onSetPausedTaskNotification?: (message: string | null) => void;
+  currentUser?: any; // Add current user prop
 }
 
 const NotificationsSection: React.FC<NotificationsSectionProps> = ({
@@ -17,19 +18,26 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
   alarmNotification,
   pausedTaskNotification,
   onSetAlarmNotification,
-  onSetPausedTaskNotification
+  onSetPausedTaskNotification,
+  currentUser
 }) => {
+  // Filter paused tasks to only show current user's tasks
+  const currentUserEmail = currentUser?.email || currentUser?.userEmail;
+  const userPausedTasks = pausedTasks.filter(task => 
+    task.userEmail === currentUserEmail || task.assignedToEmail === currentUserEmail
+  );
+
   return (
     <>
-      {/* Paused Tasks Alert */}
-      {pausedTasks.length > 0 && (
+      {/* Paused Tasks Alert - Only for current user */}
+      {userPausedTasks.length > 0 && (
         <Alert
           severity="warning"
           sx={{ mb: 2 }}
           icon={<NotificationImportant />}
         >
           <Typography variant="body2">
-            You have {pausedTasks.length} paused task(s): {pausedTasks.map(t => t.taskName).join(', ')}
+            You have {userPausedTasks.length} paused task(s): {userPausedTasks.map(t => t.taskName).join(', ')}
           </Typography>
         </Alert>
       )}
@@ -66,7 +74,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
         </Snackbar>
       )}
 
-      {/* Paused Task Notification Snackbar */}
+      {/* Paused Task Notification Snackbar - Only for current user */}
       {onSetPausedTaskNotification && (
         <Snackbar
           open={!!pausedTaskNotification}
