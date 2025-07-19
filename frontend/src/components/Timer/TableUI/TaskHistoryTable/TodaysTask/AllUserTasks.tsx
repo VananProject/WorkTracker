@@ -32,13 +32,6 @@ import ActivityTimeline from '../../components/ActivityTimeline';
 import SummaryStatistics from '../../components/SummaryStatistics';
 import type { Task, UserGroup } from '../../types/TaskHistoryTypes';
 import { getLastActivityTime } from '../../utils/dateUtils';
-// import ActivityTimeline from './ActivityTimeline';
-// import SummaryStatistics from './SummaryStatistics';
-// import { Task, UserGroup } from '../types/TaskHistoryTypes';
-// import { getLastActivityTime } from '../utils/dateUtils';
-// import ActivityTimeline from '../components/ActivityTimeline';
-// import SummaryStatistics from '../components/SummaryStatistics';
-// import type { Task, UserGroup } from '../types/TaskHistoryTypes';
 
 interface AllUserTasksProps {
   tasks: Task[];
@@ -421,30 +414,7 @@ const groupTasksByUser = (tasks: Task[]): UserGroup[] => {
                               )}
                             </Box>
                           </TableCell>
-                          {/* <TableCell>
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              {task.status === 'paused' && (
-                                <Button
-                                  size="small"
-                                  startIcon={<PlayArrow />}
-                                  onClick={() => handleTaskAction(task, 'resume')}
-                                  disabled={isRunning}
-                                >
-                                  Resume
-                                </Button>
-                              )}
-                              {['started', 'resumed'].includes(task.status) && (
-                                <Button
-                                  size="small"
-                                  startIcon={<Stop />}
-                                  onClick={() => handleTaskAction(task, 'stop')}
-                                  color="error"
-                                >
-                                  Stop
-                                </Button>
-                              )}
-                            </Box>
-                          </TableCell> */}
+                       
                         </TableRow>
                         
                         <TableRow>

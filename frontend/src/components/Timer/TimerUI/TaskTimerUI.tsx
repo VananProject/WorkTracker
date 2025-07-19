@@ -1,3 +1,4 @@
+
 import React, { useCallback } from 'react';
 import { Box, Typography, Chip, Collapse } from '@mui/material';
 import { AdminPanelSettings } from '@mui/icons-material';
@@ -8,65 +9,10 @@ import AssignedTasksSection from './AssignedTasksSection';
 import NotificationsSection from './NotificationsSection';
 import TaskTimerControls from './TaskTimerControls';
 import TaskTimerDialogs from './TimerDialog/TaskTimerDialogs';
-// import TaskHistoryTable from '../TableUI/TaskHistoryTable/TaskHistoryTable';
 import TaskHistoryTableEnhanced from '../TableUI/TaskHistoryTable/TaskHistoryTableEnhanced';
 import { useSelectiveRefresh } from '../../../hooks/useSelectiveRefresh';
 import { exportTaskLevelReport } from '../../../services/taskService';
 import DailyTimeTrackingCard from './DailyTimeTrackingCard';
-
-// interface TaskTimerUIProps {
-//   // State props
-//   state: any;
-//   currentUser: any;
-//   isAdmin: boolean;
-//   showAdminPanel: boolean;
-//   assignedTasks: any[];
-//   allTasks: any[];
-//   alarmNotification: string | null;
-//   pausedTaskNotification: string | null;
-//   onResumeAssignedTask?: (task: any) => void;
-//   showHistory: boolean;
-//   tableFilters: any;
-//   tablePage: number;
-//   tableRowsPerPage: number;
-//   expandedRows: Set<string>;
-//   showAssignDialog: boolean;
-//   users: any[];
-//   loadingUsers: boolean;
-//   userError: string | null;
-//   assignTaskData: any;
-
-//   // Handler props
-//   dispatch: (action: any) => void;
-//   formatTime: (seconds: number) => string;
-//   onStartTask: (type: 'task' | 'meeting') => void;
-//   onCreateTask: () => void;
-//   onPause: () => void;
-//   onResume: () => void;
-//   onStop: () => void;
-//   onStartAssignedTask: (task: any) => void;
-//   onSetAlarm: (minutes: number) => void;
-//   onTestAlarmSound: () => void;
-//   onToggleHistory: () => void;
-//   onTableFilterChange: (field: string, value: string) => void;
-//   onTablePageChange: (event: unknown, newPage: number) => void;
-//   onTableRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-//   onToggleRowExpansion: (taskName: string) => void;
-//   onTableAction: (task: any, action: 'resume' | 'stop' | 'start') => void;
-//   onToggleAdminPanel: () => void;
-//   onShowAssignDialog: () => void;
-//   onHideAssignDialog: () => void;
-//   onAssignTask: () => void;
-//   onAssignTaskDataChange: (field: string, value: string | Date | null) => void; // Updated type
-//   onLoadUsers: () => void;
-//   onSetAlarmNotification: (message: string | null) => void;
-//   onSetPausedTaskNotification: (message: string | null) => void;
-//   getFilteredUserTasks: () => any[];
-//   getPausedTasks: () => any[];
-//   onRefresh?: () => Promise<void>;
-//   onRefreshAssignedTasks?: () => Promise<void>;
-//   onRefreshTaskHistory?: () => Promise<void>;
-// }
 
 interface TaskTimerUIProps {
   // State props
@@ -75,7 +21,7 @@ interface TaskTimerUIProps {
   isAdmin: boolean;
   showAdminPanel: boolean;
   assignedTasks: any[];
-  allTasks: any[]; // Make sure this line exists
+  allTasks: any[];
   alarmNotification: string | null;
   pausedTaskNotification: string | null;
   onResumeAssignedTask?: (task: any) => void;
@@ -148,14 +94,14 @@ const TaskTimerUI: React.FC<TaskTimerUIProps> = (props) => {
     onSetAlarmNotification,
     onSetPausedTaskNotification,
     onRefresh,
-      onPause,
-  onResume,
-  onStop,
-  //  currentUser,
-  allTasks,
-
+    onPause,
+    onResume,
+    onStop,
+    allTasks,
   } = props;
- const { refreshKeys, refreshComponent, refreshMultiple } = useSelectiveRefresh();
+
+  const { refreshKeys, refreshComponent, refreshMultiple } = useSelectiveRefresh();
+
   // Enhanced check for ACTIVE assigned tasks only
   const hasActiveAssignedTasks = React.useMemo(() => {
     if (!assignedTasks || !Array.isArray(assignedTasks)) {
@@ -188,7 +134,7 @@ const TaskTimerUI: React.FC<TaskTimerUIProps> = (props) => {
     return activeTasks.length > 0;
   }, [assignedTasks]);
 
-   const handleExportTaskLevelReport = async (userEmail: string) => {
+  const handleExportTaskLevelReport = async (userEmail: string) => {
     try {
       const result = await exportTaskLevelReport(userEmail);
       if (result.success) {
@@ -201,7 +147,8 @@ const TaskTimerUI: React.FC<TaskTimerUIProps> = (props) => {
       onSetAlarmNotification?.('❌ Error exporting report');
     }
   };
-const handleTaskAssigned = useCallback(async () => {
+
+  const handleTaskAssigned = useCallback(async () => {
     // Refresh both components after task assignment
     refreshMultiple(['assignedTasks', 'taskHistory']);
     
@@ -210,30 +157,25 @@ const handleTaskAssigned = useCallback(async () => {
       await props.onRefresh();
     }
   }, [refreshMultiple, props.onRefresh]);
+
   // Debug logging (remove in production)
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('AssignedTasks Debug:', {
-        assignedTasks,
-        totalLength: assignedTasks?.length || 0,
-        hasActiveAssignedTasks,
-        activeTasks: assignedTasks?.filter(task => {
-          if (!task || typeof task !== 'object') return false;
-          if (!task.taskId || !(task.taskName || task.name || task.title)) return false;
-          
-          const excludedStatuses = ['ended', 'completed', 'finished', 'done'];
-          if (task.status && excludedStatuses.includes(task.status.toLowerCase())) return false;
-          
-          const activeStatuses = ['pending', 'started', 'paused', 'resumed', 'assigned'];
-          return !task.status || activeStatuses.includes(task.status.toLowerCase());
-        }),
-        completedTasks: assignedTasks?.filter(task => {
-          const excludedStatuses = ['ended', 'completed', 'finished', 'done'];
-          return task?.status && excludedStatuses.includes(task.status.toLowerCase());
-        })
+      console.log('TaskTimerUI Debug:', {
+        state: {
+          isRunning: state.isRunning,
+          elapsedTime: state.elapsedTime,
+          currentTask: state.currentTask ? {
+            name: state.currentTask.taskName,
+            status: state.currentTask.status,
+            duration: state.currentTask.duration,
+            startTime: state.currentTask.startTime,
+            lastStartTime: state.currentTask.lastStartTime
+          } : null
+        }
       });
     }
-  }, [assignedTasks, hasActiveAssignedTasks]);
+  }, [state]);
 
   return (
     <Box sx={timerStyles.container}>
@@ -274,6 +216,7 @@ const handleTaskAssigned = useCallback(async () => {
             border: '1px solid rgba(156, 39, 176, 0.1)',
             boxShadow: '0 8px 32px rgba(156, 39, 176, 0.1)',
             animation: showAdminPanel ? 'adminPanelSlideIn 0.5s ease-out' : 'none',
+           
             '@keyframes adminPanelSlideIn': {
               '0%': {
                 opacity: 0,
@@ -364,19 +307,16 @@ const handleTaskAssigned = useCallback(async () => {
         </Collapse>
       )}
 
-      {/* Assigned Tasks Section - ONLY SHOW FOR ACTIVE TASKS */}
-     {/* Assigned Tasks Section - ENHANCED WIDTH AND RESPONSIVENESS */}
+      {/* Daily Time Tracking Card */}
+      <DailyTimeTrackingCard
+        tasks={getFilteredUserTasks()} // Only pass current user's tasks
+        formatTime={formatTime}
+        currentUser={currentUser}
+        isRunning={state.isRunning}
+        currentTask={getFilteredUserTasks().find((task: { status: string; }) => ['started', 'resumed'].includes(task.status)) || null}
+      />
 
-
-<DailyTimeTrackingCard
-  tasks={getFilteredUserTasks()} // Only pass current user's tasks
-  formatTime={formatTime}
-  currentUser={currentUser}
-  isRunning={state.isRunning}
-  currentTask={getFilteredUserTasks().find((task: { status: string; }) => ['started', 'resumed'].includes(task.status)) || null}
-/>
-
-      {/* Timer Display */}
+      {/* Timer Display - Pass the state directly, let TimerDisplay handle the calculation */}
       <TimerDisplay
         elapsedTime={state.elapsedTime}
         currentTask={state.currentTask}
@@ -399,183 +339,128 @@ const handleTaskAssigned = useCallback(async () => {
       {/* Control Buttons */}
       <TaskTimerControls {...props} />
 
+      {/* Assigned Tasks Section */}
       {hasActiveAssignedTasks && (
-  <Box sx={{ 
-    mb: 2,
-    width: '100%',
-    maxWidth: 'none', // Remove any width constraints
-    // Enhanced responsive width
-    mx: { 
-      xs: -1,    // Extend beyond container on mobile
-      sm: -2,    // More extension on small screens
-      md: -3,    // Even more on medium
-      lg: -4,    // Maximum extension on large screens
-      xl: -5     // Full extension on extra large
-    },
-    px: { 
-      xs: 1,     // Minimal padding on mobile
-      sm: 2,     // Slightly more on small
-      md: 3,     // Standard padding on medium
-      lg: 4,     // More padding on large
-      xl: 5      // Maximum padding on xl
-    },
-    // Override any parent container constraints
-    '& .MuiCard-root': {
-      width: '100% !important',
-      maxWidth: 'none !important',
-    },
-    // Ensure full viewport utilization
-    minWidth: {
-      xs: 'calc(100vw - 16px)', // Almost full viewport on mobile
-      sm: 'calc(100vw - 32px)', // Account for scrollbar
-      md: 'calc(100vw - 48px)',
-      lg: 'calc(100vw - 64px)',
-      xl: 'calc(100vw - 80px)'
-    }
-  }}>
-     {hasActiveAssignedTasks && (
-        <AssignedTasksSection 
-          key={refreshKeys.assignedTasks}
-          {...props} 
-        />
+        <Box sx={{ 
+          mb: 2,
+          width: '100%',
+          maxWidth: 'none',
+          mx: { 
+            xs: -1,
+            sm: -2,
+            md: -3,
+            lg: -4,
+            xl: -5
+          },
+          px: { 
+            xs: 1,
+            sm: 2,
+            md: 3,
+            lg: 4,
+            xl: 5
+          },
+          '& .MuiCard-root': {
+            width: '100% !important',
+            maxWidth: 'none !important',
+          },
+          minWidth: {
+            xs: 'calc(100vw - 16px)',
+            sm: 'calc(100vw - 32px)',
+            md: 'calc(100vw - 48px)',
+            lg: 'calc(100vw - 64px)',
+            xl: 'calc(100vw - 80px)'
+          }
+        }}>
+          <AssignedTasksSection 
+            key={refreshKeys.assignedTasks}
+            {...props} 
+          />
+        </Box>
       )}
-    {/* <AssignedTasksSection   key={refreshKeys.assignedTasks} {...props} /> */}
-  </Box>
-)}
 
-<Box sx={{
-  mb: 2,
-  width: '90%',
-  maxWidth: 'none', // Remove any width constraints
-  // Much more aggressive left positioning
-  mx: {
-    xs: 2,    // Much more extension to left on mobile
-    sm: 3,   // Even more on small screens
-    md: 4,   // Much more on medium
-    lg: 5,   // Very aggressive on large screens
-    xl: 6    // Maximum leftward extension
-  },
-  px: {
-    xs: 2,     // Compensate with adequate padding
-    sm: 3,     // More padding for content safety
-    md: 4,     // Standard padding
-    lg: 5,     // More padding on large
-    xl: 6      // Maximum padding
-  },
-  // Override any parent container constraints
-  '& .MuiCard-root': {
-    width: '100% !important',
-    maxWidth: 'none !important',
-  },
-  // Maximum viewport utilization
-  minWidth: {
-    xs: 'calc(94vw + 2px)',  // Extend beyond viewport
-    sm: 'calc(94vw + 4px)',  // More extension
-    md: 'calc(94vw + 6px)',  // Even more
-    lg: 'calc(94vw + 8px)',  // Maximum extension
-    xl: 'calc(94vw + 10px)'   // Full extension beyond viewport
-  },
-  // Additional positioning for extreme left movement
-  position: 'relative',
-  left: {
-    xs: '-24px',  // Move 16px further left
-    sm: '-28px',  // Move 20px further left
-    md: '-32px',  // Move 24px further left
-    lg: '-36px',  // Move 28px further left
-    xl: '-40px'   // Move 32px further left
-  },
-  // Ensure it doesn't get clipped
-  overflow: 'visible',
-  // Force full width expansion
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    left: {
-      xs: '-40px',
-      sm: '-50px',
-      md: '-60px',
-      lg: '-70px',
-      xl: '-80px'
-    },
-    width: '1px',
-    height: '1px',
-    visibility: 'hidden'
-  }
-}}>
-
-{/* <TaskHistoryTable
-  showHistory={showHistory}
-  onToggleHistory={onToggleHistory}
-  filteredTasks={getFilteredUserTasks()}
-  tableFilters={tableFilters}
-  onFilterChange={onTableFilterChange}
-  tablePage={tablePage}
-  tableRowsPerPage={tableRowsPerPage}
-  onPageChange={onTablePageChange}
-  onRowsPerPageChange={onTableRowsPerPageChange}
-  expandedRows={expandedRows}
-  onToggleRowExpansion={onToggleRowExpansion}
-  formatTime={formatTime}
-  onTableAction={onTableAction}
-  isRunning={state.isRunning}
-  currentUser={currentUser}
-  isAdmin={isAdmin}
-  // Enhanced props for better task categorization
-  isActivityPage={true}
-  allTasks={props.allTasks || []}
-  assignedTasks={assignedTasks || []}
-/> */}
-
-<TaskHistoryTableEnhanced
- key={refreshKeys.taskHistory}
-  showHistory={showHistory}
-  onToggleHistory={onToggleHistory}
-  filteredTasks={getFilteredUserTasks()}
-  tableFilters={tableFilters}
-  onFilterChange={onTableFilterChange}
-  tablePage={tablePage}
-  tableRowsPerPage={tableRowsPerPage}
-  onPageChange={onTablePageChange}
-  onRowsPerPageChange={onTableRowsPerPageChange}
-  expandedRows={expandedRows}
-  onToggleRowExpansion={onToggleRowExpansion}
-  formatTime={formatTime}
-  onTableAction={onTableAction}
-  isRunning={state.isRunning}
-  currentUser={currentUser}
-  isAdmin={isAdmin}
-  // Enhanced props for better task categorization
-  isActivityPage={true}
-  allTasks={props.allTasks || []}
-  onExportTaskLevelReport={handleExportTaskLevelReport}
-  assignedTasks={assignedTasks || []}
-/>
-</Box> 
+      {/* Task History Table */}
+      <Box sx={{
+        mb: 2,
+        width: '90%',
+        maxWidth: 'none',
+        mx: {
+          xs: 2,
+          sm: 3,
+          md: 4,
+          lg: 5,
+          xl: 6
+        },
+        px: {
+          xs: 2,
+          sm: 3,
+          md: 4,
+          lg: 5,
+          xl: 6
+        },
+        '& .MuiCard-root': {
+          width: '100% !important',
+          maxWidth: 'none !important',
+        },
+        minWidth: {
+          xs: 'calc(94vw + 2px)',
+          sm: 'calc(94vw + 4px)',
+          md: 'calc(94vw + 6px)',
+          lg: 'calc(94vw + 8px)',
+          xl: 'calc(94vw + 10px)'
+        },
+        position: 'relative',
+        left: {
+          xs: '-24px',
+          sm: '-28px',
+          md: '-32px',
+          lg: '-36px',
+          xl: '-40px'
+        },
+        overflow: 'visible',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: {
+            xs: '-40px',
+            sm: '-50px',
+            md: '-60px',
+            lg: '-70px',
+            xl: '-80px'
+          },
+          width: '1px',
+          height: '1px',
+          visibility: 'hidden'
+        }
+      }}>
+        <TaskHistoryTableEnhanced
+          key={refreshKeys.taskHistory}
+          showHistory={showHistory}
+          onToggleHistory={onToggleHistory}
+          filteredTasks={getFilteredUserTasks()}
+          tableFilters={tableFilters}
+          onFilterChange={onTableFilterChange}
+          tablePage={tablePage}
+          tableRowsPerPage={tableRowsPerPage}
+          onPageChange={onTablePageChange}
+          onRowsPerPageChange={onTableRowsPerPageChange}
+          expandedRows={expandedRows}
+          onToggleRowExpansion={onToggleRowExpansion}
+          formatTime={formatTime}
+          onTableAction={onTableAction}
+          isRunning={state.isRunning}
+          currentUser={currentUser}
+          isAdmin={isAdmin}
+          isActivityPage={true}
+          allTasks={props.allTasks || []}
+          onExportTaskLevelReport={handleExportTaskLevelReport}
+          assignedTasks={assignedTasks || []}
+        />
+      </Box> 
 
       {/* All Dialogs */}
       <TaskTimerDialogs {...props} 
-       allTasks={props.allTasks || []}
-      //  onTaskAssigned={handleTaskAssigned}
+        allTasks={props.allTasks || []}
       />
-      {/* All Dialogs */}
-{/* <TaskTimerDialogs 
-  state={state}
-  dispatch={dispatch}
-  showAssignDialog={showAssignDialog}
-  users={users}
-  loadingUsers={loadingUsers}
-  userError={userError}
-  assignTaskData={assignTaskData}
-  allTasks={allTasks}
-  onCreateTask={onCreateTask}
-  onHideAssignDialog={onHideAssignDialog}
-  onAssignTask={onAssignTask}
-  onAssignTaskDataChange={onAssignTaskDataChange}
-  onLoadUsers={onLoadUsers}
-  onSetAlarm={onSetAlarm}
-  onTestAlarmSound={onTestAlarmSound}
-/> */}
-
     </Box>
   );
 };

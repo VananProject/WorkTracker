@@ -1,94 +1,4 @@
-// import { User as UserEntity } from '../entities/User.entity';
 
-// // Import the Mongoose model (JavaScript)
-// const UserModel = require('../models/User');
-
-// export class UserRepository {
-//   async findAll(): Promise<UserEntity[]> {
-//     try {
-//       const users = await UserModel.find({}, 'username email role createdAt').sort({ createdAt: -1 });
-//       return users.map((user: any) => this.mapToEntity(user));
-//     } catch (error: any) {
-//       throw new Error(`Failed to find all users: ${error.message}`);
-//     }
-//   }
-
-//   async findByEmail(email: string): Promise<UserEntity | null> {
-//     try {
-//       const user = await UserModel.findOne({ email });
-//       return user ? this.mapToEntity(user) : null;
-//     } catch (error: any) {
-//       throw new Error(`Failed to find user by email: ${error.message}`);
-//     }
-//   }
-
-//   async findByEmailWithPassword(email: string): Promise<UserEntity | null> {
-//     try {
-//       const user = await UserModel.findOne({ email }).select('+password');
-//       return user ? this.mapToEntity(user) : null;
-//     } catch (error: any) {
-//       throw new Error(`Failed to find user by email with password: ${error.message}`);
-//     }
-//   }
-
-//   async findByEmailOrUsername(email: string, username: string): Promise<UserEntity | null> {
-//     try {
-//       const user = await UserModel.findOne({ $or: [{ email }, { username }] });
-//       return user ? this.mapToEntity(user) : null;
-//     } catch (error: any) {
-//       throw new Error(`Failed to find user by email or username: ${error.message}`);
-//     }
-//   }
-
-//   async create(userData: Partial<UserEntity>): Promise<UserEntity> {
-//     try {
-//       const user = new UserModel({
-//         username: userData.username,
-//         email: userData.email,
-//         password: userData.password,
-//         role: userData.role || 'user'
-//       });
-//       const savedUser = await user.save();
-//       return this.mapToEntity(savedUser);
-//     } catch (error: any) {
-//       throw new Error(`Failed to create user: ${error.message}`);
-//     }
-//   }
-
-//   async updateRole(email: string, role: string): Promise<UserEntity | null> {
-//     try {
-//       const user = await UserModel.findOneAndUpdate(
-//         { email },
-//         { role },
-//         { new: true }
-//       );
-//       return user ? this.mapToEntity(user) : null;
-//     } catch (error: any) {
-//       throw new Error(`Failed to update user role: ${error.message}`);
-//     }
-//   }
-
-//   async comparePassword(user: UserEntity, password: string): Promise<boolean> {
-//     try {
-//       const dbUser = await UserModel.findById(user.id);
-//       return dbUser ? await dbUser.comparePassword(password) : false;
-//     } catch (error: any) {
-//       throw new Error(`Failed to compare password: ${error.message}`);
-//     }
-//   }
-
-//   private mapToEntity(userDoc: any): UserEntity {
-//     return new UserEntity({
-//       id: userDoc._id?.toString(),
-//       username: userDoc.username,
-//       email: userDoc.email,
-//       password: userDoc.password,
-//       role: userDoc.role,
-//       createdAt: userDoc.createdAt,
-//       updatedAt: userDoc.updatedAt
-//     });
-//   }
-// }
 import { User as UserEntity } from '../entities/User.entity';
 
 // Import the Mongoose model (JavaScript)
@@ -156,9 +66,7 @@ export class UserRepository {
         email: userData.email,
         password: userData.password,
         telegramNumber: userData.telegramNumber,
-        // telegramVerified: userData.telegramVerified || false,
-        // telegramOtp: userData.telegramOtp,
-        // telegramOtpExpiry: userData.telegramOtpExpiry,
+       
         role: userData.role || 'user'
       });
       const savedUser = await user.save();
@@ -217,6 +125,23 @@ export class UserRepository {
       throw new Error(`Failed to compare password: ${error.message}`);
     }
   }
+async updateById(id: string, updateData: Partial<UserEntity>): Promise<UserEntity | null> {
+  try {
+    const user = await UserModel.findByIdAndUpdate(id, updateData, { new: true });
+    return user ? this.mapToEntity(user) : null;
+  } catch (error: any) {
+    throw new Error(`Failed to update user: ${error.message}`);
+  }
+}
+
+async deleteById(id: string): Promise<boolean> {
+  try {
+    const result = await UserModel.findByIdAndDelete(id);
+    return !!result;
+  } catch (error: any) {
+    throw new Error(`Failed to delete user: ${error.message}`);
+  }
+}
 
   private mapToEntity(userDoc: any): UserEntity {
     return new UserEntity({
@@ -226,9 +151,7 @@ export class UserRepository {
       password: userDoc.password,
       role: userDoc.role,
       telegramNumber: userDoc.telegramNumber,
-      // telegramVerified: userDoc.telegramVerified,
-      // telegramOtp: userDoc.telegramOtp,
-      // telegramOtpExpiry: userDoc.telegramOtpExpiry,
+      
       createdAt: userDoc.createdAt,
       updatedAt: userDoc.updatedAt
     });

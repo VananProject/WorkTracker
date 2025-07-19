@@ -324,14 +324,7 @@ const formatRecurringSummary = () => {
   return summary;
 };
 
-// Update the onDataChange handler to properly handle recurring options
-// const handleDataChange = (field: string, value: string | Date | null | boolean | any) => {
-//   if (field === 'recurringOptions') {
-//     onDataChange(field, value);
-//   } else {
-//     onDataChange(field, value);
-//   }
-// };
+
 
 
   return (
@@ -385,34 +378,7 @@ const formatRecurringSummary = () => {
         }}>
           <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
             <Grid container spacing={{ xs: 2, sm: 3 }}>
-              {/* Task Name - Full Width */}
-              {/* <Grid item xs={12}>
-                <Box sx={{ 
-                  p: 2, 
-                  border: '1px solid', 
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  bgcolor: 'grey.50'
-                }}>
-                  <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 600 }}>
-                    Task Information
-                  </Typography>
-                  <TextField
-                    label="Task Name"
-                    fullWidth
-                    variant="outlined"
-                    value={assignTaskData.taskName || ''}
-                    onChange={(e) => onDataChange('taskName', e.target.value)}
-                    placeholder="Enter a descriptive task name..."
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        bgcolor: 'white'
-                      }
-                    }}
-                  />
-                </Box>
-              </Grid> */}
+             
   <Grid item xs={12}>
                 <Box sx={{ 
                   p: 2, 

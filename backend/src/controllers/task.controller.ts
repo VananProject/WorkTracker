@@ -4,9 +4,14 @@ import Task, { ITask } from "../models/Task";
 import User from "../models/User";
 import TaskMapping, { ITaskMapping } from '../models/TaskMapping';
 import * as XLSX from 'xlsx';
-
+import { TaskService } from '../services/task.service';
 export class TaskController {
-  taskService: any;
+    private taskService: TaskService;
+
+  constructor() {
+    this.taskService = new TaskService(); // Add this line
+  }
+  // taskService: any;
   private async getUserTelegram(email: string): Promise<string | undefined> {
     try {
       const user = await User.findOne({ email });
@@ -73,112 +78,6 @@ export class TaskController {
     }
   }
 
-  // Update the createTaskAssignment method
-  // async createTaskAssignment(req: AuthRequest, res: Response): Promise<void> {
-  //   try {
-  //     const userEmail = req.user?.email;
-  //     const userId = req.user?._id;
-
-  //     if (!userEmail) {
-  //       res.status(401).json({
-  //         success: false,
-  //         message: 'User authentication required'
-  //       });
-  //       return;
-  //     }
-
-  //     const { taskName, type, assignedToEmail, description, estimatedTime, dueDate } = req.body;
-
-  //     console.log('🎯 === CREATE ASSIGNMENT ROUTE HIT ===');
-  //     console.log('📝 Request body:', JSON.stringify(req.body, null, 2));
-  //     console.log('👤 Assigning user:', userEmail, 'Role:', req.user?.role);
-
-  //     // Validation
-  //     if (!taskName || !type || !assignedToEmail) {
-  //       console.log('❌ Missing required fields');
-  //       res.status(400).json({
-  //         success: false,
-  //         message: 'Task name, type, and assigned user email are required'
-  //       });
-  //       return;
-  //     }
-
-  //     // Verify assigned user exists
-  //     const assignedUser = await User.findOne({ email: assignedToEmail });
-  //     if (!assignedUser) {
-  //       res.status(400).json({
-  //         success: false,
-  //         message: 'Assigned user not found'
-  //       });
-  //       return;
-  //     }
-
-  //     // Enhanced task data with proper assignment tracking
-  //     const taskData = {
-  //       taskId: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-  //       taskName,
-  //       type: type || 'task',
-  //       description,
-  //       estimatedTime,
-  //       dueDate,
-  //       status: 'assigned' as const,
-  //       isAssigned: true,
-
-  //       // CRITICAL: Proper assignment field setup
-  //       assignedToEmail: assignedToEmail,
-  //       assignedToName: assignedUser.username || assignedToEmail.split('@')[0],
-  //       assignedBy: {
-  //         userId: userId?.toString(),
-  //         username: req.user?.username || userEmail.split('@')[0],
-  //         email: userEmail
-  //       },
-  //       assignedByEmail: userEmail, // ADD THIS FIELD
-
-  //       // Task ownership
-  //       createdBy: userEmail,
-  //       userEmail: assignedToEmail, // The person who will work on the task
-  //       username: assignedUser.username || assignedToEmail.split('@')[0],
-
-  //       // Timestamps
-  //       startDate: new Date().toISOString(),
-  //       createdAt: new Date(),
-  //       assignedAt: new Date(), // ADD THIS FIELD
-
-  //       totalDuration: 0,
-  //       activities: [{
-  //         action: 'assigned' as const,
-  //         timestamp: new Date(),
-  //         duration: 0,
-  //         assignedBy: userEmail,
-  //         assignedTo: assignedToEmail
-  //       }]
-  //     };
-
-  //     const task = new Task(taskData);
-  //     await task.save();
-
-  //     console.log(`✅ Task assigned successfully:`, {
-  //       taskId: task.taskId,
-  //       assignedBy: userEmail,
-  //       assignedTo: assignedToEmail,
-  //       assignedByRole: req.user?.role
-  //     });
-
-  //     res.json({
-  //       success: true,
-  //       data: task,
-  //       message: 'Task assigned successfully'
-  //     });
-  //   } catch (error) {
-  //     console.error('Error creating task assignment:', error);
-  //     res.status(500).json({
-  //       success: false,
-  //       message: 'Failed to create task assignment',
-  //       error: error instanceof Error ? error.message : 'Unknown error'
-  //     });
-  //   }
-  // }
-  // Get all tasks for admin only
   async getAdminTasks(req: AuthRequest, res: Response): Promise<void> {
     try {
       // Check if user is admin
@@ -2213,4 +2112,179 @@ async createCompletedTask(req: AuthRequest, res: Response): Promise<void> {
       });
     }
   }
+
+// Add these methods to your TaskController class
+// Add these methods to your existing TaskController class
+async editTask(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { taskId } = req.params;
+    const updateData = req.body;
+    const userEmail = req.user?.email;
+    
+    console.log('🔄 TaskController.editTask:', { taskId, updateData, userEmail });
+    
+    if (!taskId) {
+      res.status(400).json({
+        success: false,
+        message: 'Task ID is required'
+      });
+      return;
+    }
+
+    if (!userEmail) {
+      res.status(401).json({
+        success: false,
+        message: 'User authentication required'
+      });
+      return;
+    }
+
+    // Find the task first
+    const existingTask = await Task.findOne({ taskId });
+    
+    if (!existingTask) {
+      res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+      return;
+    }
+
+    // Check permissions - user can only edit their own tasks or if they're admin
+    const canEdit = 
+      existingTask.createdBy === userEmail ||
+      existingTask.userEmail === userEmail ||
+      existingTask.assignedToEmail === userEmail ||
+      req.user?.role === 'admin';
+
+    if (!canEdit) {
+      res.status(403).json({
+        success: false,
+        message: 'Permission denied: You can only edit your own tasks'
+      });
+      return;
+    }
+
+    // Update the task
+    const updatedTask = await Task.findOneAndUpdate(
+      { taskId },
+      {
+        $set: {
+          ...updateData,
+          updatedAt: new Date()
+        }
+      },
+      { 
+        new: true,
+        runValidators: false
+      }
+    );
+
+    if (!updatedTask) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update task'
+      });
+      return;
+    }
+
+    console.log('✅ Task updated successfully:', taskId);
+    
+    res.json({
+      success: true,
+      message: 'Task updated successfully',
+      data: updatedTask
+    });
+  } catch (error) {
+    console.error('❌ Error editing task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update task',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+async deleteTask(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { taskId } = req.params;
+    const userEmail = req.user?.email;
+    
+    console.log('🗑️ TaskController.deleteTask:', { taskId, userEmail });
+    
+    if (!taskId) {
+      res.status(400).json({
+        success: false,
+        message: 'Task ID is required'
+      });
+      return;
+    }
+
+    if (!userEmail) {
+      res.status(401).json({
+        success: false,
+        message: 'User authentication required'
+      });
+      return;
+    }
+
+    // Find the task first
+    const existingTask = await Task.findOne({ taskId });
+    
+    if (!existingTask) {
+      res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+      return;
+    }
+
+    // Check permissions - user can only delete their own tasks or if they're admin
+    const canDelete = 
+      existingTask.createdBy === userEmail ||
+      existingTask.userEmail === userEmail ||
+      existingTask.assignedToEmail === userEmail ||
+      req.user?.role === 'admin';
+
+    if (!canDelete) {
+      res.status(403).json({
+        success: false,
+        message: 'Permission denied: You can only delete your own tasks'
+      });
+      return;
+    }
+
+    // Delete the task
+    const deletedTask = await Task.findOneAndDelete({ taskId });
+    
+    if (!deletedTask) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete task'
+      });
+      return;
+    }
+
+    console.log('✅ Task deleted successfully:', taskId);
+    
+    res.json({
+      success: true,
+      message: 'Task deleted successfully',
+      data: { taskId }
+    });
+  } catch (error) {
+    console.error('❌ Error deleting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete task',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+
+
+
+
+
 }

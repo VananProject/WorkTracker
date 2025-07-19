@@ -14,7 +14,16 @@ import {
   IconButton,
   Button,
   TablePagination,
-  Typography
+  Typography,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField
 } from '@mui/material';
 import {
   ExpandMore,
@@ -33,7 +42,8 @@ import type { Task } from '../../types/TaskHistoryTypes';
 import { getLastActivityTime } from '../../utils/dateUtils';
 import RecurringDialog from '../RecurringTask/RecurringDialog';
 import DailyTimeTrackingCard from '../../../TimerUI/DailyTimeTrackingCard';
-
+import { Edit, Delete } from '@mui/icons-material';
+import { deleteTask, editTask } from '../../../../../services/taskService';
 interface TodaysTasksProps {
   tasks: Task[];
   formatTime: (seconds: number) => string;
@@ -47,7 +57,7 @@ interface TodaysTasksProps {
 }
 
 const TodaysTasks: React.FC<TodaysTasksProps> = ({
-  tasks,
+ tasks: initialTasks,
   formatTime,
   onTableAction,
   isRunning,
@@ -62,21 +72,82 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+const [editDialogOpen, setEditDialogOpen] = useState(false);
+ const [tasks, setTasks] = useState<Task[]>(initialTasks); 
+const [editingTask, setEditingTask] = useState<Task | null>(null);
+const [editFormData, setEditFormData] = useState({
+  taskName: '',
+  description: '',
+  type: 'task'
+});
 
-  const handleToggleTaskExpansion = (taskId: string) => {
-    const newExpanded = new Set(expandedTasks);
-    if (newExpanded.has(taskId)) {
-      newExpanded.delete(taskId);
-    } else {
-      newExpanded.add(taskId);
-    }
-    setExpandedTasks(newExpanded);
-    if (onRefreshTasks) {
-        setTimeout(() => {
-          onRefreshTasks();
-        }, 500);
-      }
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setEditFormData({
+      taskName: task.taskName,
+      description: task.description || '',
+      type: task.type
+    });
+    setEditDialogOpen(true);
   };
+ const handleSaveEdit = async () => {
+  if (!editingTask) return;
+  try {
+    const result = await editTask(editingTask.taskId, editFormData);
+    if (result.success) {
+      alert('Task updated successfully');
+      // Ensure the updated tasks conform to the Task type
+      const updatedTasks: Task[] = tasks.map(task => 
+        task.taskId === editingTask.taskId 
+          ? { ...task, ...editFormData } as Task // Cast to Task
+          : task
+      );
+      setTasks(updatedTasks); // Set the tasks state
+      setEditDialogOpen(false);
+      setEditingTask(null);
+    } else {
+      alert('Failed to update task: ' + result.error);
+    }
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert('Failed to update task: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+};
+  const handleDeleteTask = async (task: Task) => {
+    if (window.confirm(`Are you sure you want to delete "${task.taskName}"?`)) {
+      try {
+        const result = await deleteTask(task.taskId);
+        if (result.success) {
+          alert('Task deleted successfully');
+          // Remove the task from the local tasks state
+          const updatedTasks = tasks.filter(t => t.taskId !== task.taskId);
+          setTasks(updatedTasks); // Update the tasks state
+        } else {
+          alert('Failed to delete task: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        alert('Failed to delete task: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      }
+    }
+  };
+// ✅ Also fix the handleToggleTaskExpansion method to remove the refresh call
+const handleToggleTaskExpansion = (taskId: string) => {
+  const newExpanded = new Set(expandedTasks);
+  if (newExpanded.has(taskId)) {
+    newExpanded.delete(taskId);
+  } else {
+    newExpanded.add(taskId);
+  }
+  setExpandedTasks(newExpanded);
+  // ✅ Remove this unnecessary refresh call
+  // if (onRefreshTasks) {
+  //   setTimeout(() => {
+  //     onRefreshTasks();
+  //   }, 500);
+  // }
+};
+
 
  const handleTaskAction = (task: Task, action: 'resume' | 'stop' | 'start') => {
   console.log('🎯 TodaysTasks.handleTaskAction:', { task: task.taskName, action });
@@ -262,7 +333,7 @@ const validTasks = useMemo(() => {
               {/* <TableCell>Assignment Info</TableCell> */}
               <TableCell>Last Activity</TableCell>
               {/* <TableCell>Recurring</TableCell> */}
-              {/* <TableCell>Actions</TableCell> */}
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -340,6 +411,28 @@ const validTasks = useMemo(() => {
                     </Typography>
                   </TableCell>
                   <TableCell>
+    <Box sx={{ display: 'flex', gap: 0.5 }}>
+      <Button
+        size="small"
+        startIcon={<Edit />}
+        onClick={() => handleEditTask(task)}
+        variant="outlined"
+        color="primary"
+      >
+        Edit
+      </Button>
+      <Button
+        size="small"
+        startIcon={<Delete />}
+        onClick={() => handleDeleteTask(task)}
+        variant="outlined"
+        color="error"
+      >
+        Delete
+      </Button>
+    </Box>
+  </TableCell>
+                  <TableCell>
                     {false && (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
     {(task as any).isRecurring ? (
@@ -409,7 +502,11 @@ const validTasks = useMemo(() => {
                     </Box>
                   </TableCell>
                 </TableRow>
-                
+                <TableCell>
+ 
+  
+
+</TableCell>
                 <TableRow>
                   <TableCell colSpan={8} sx={{ p: 0, border: 'none' }}>
                     <ActivityTimeline
@@ -492,17 +589,42 @@ const validTasks = useMemo(() => {
         isAdmin={false}
         formatTime={formatTime}
       />
-
-      {/* Recurring Dialog */}
-      {/* <RecurringDialog
-        open={recurringDialogOpen}
-        task={selectedTask}
-        onClose={() => {
-          setRecurringDialogOpen(false);
-          setSelectedTask(null);
-        }}
-        onSave={handleRecurringSave}
-      /> */}
+<Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+  <DialogTitle>Edit Task</DialogTitle>
+  <DialogContent>
+    <TextField
+      fullWidth
+      label="Task Name"
+      value={editFormData.taskName}
+      onChange={(e) => setEditFormData({...editFormData, taskName: e.target.value})}
+      margin="normal"
+    />
+    <TextField
+      fullWidth
+      label="Description"
+      value={editFormData.description}
+      onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+      margin="normal"
+      multiline
+      rows={3}
+    />
+    <FormControl fullWidth margin="normal">
+      <InputLabel>Type</InputLabel>
+      <Select
+        value={editFormData.type}
+        onChange={(e) => setEditFormData({...editFormData, type: e.target.value})}
+      >
+        <MenuItem value="task">Task</MenuItem>
+        <MenuItem value="meeting">Meeting</MenuItem>
+      </Select>
+    </FormControl>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+    <Button onClick={handleSaveEdit} variant="contained">Save</Button>
+  </DialogActions>
+</Dialog>
+    
     </>
   );
 };
