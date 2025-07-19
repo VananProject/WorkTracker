@@ -918,36 +918,36 @@ static async rejectTask(taskId: string, rejectedBy: string, reason?: string) {
 
 
 // Update the getAllTasks method
-// static async getAllTasks() {
-//   try {
-//     // Try to determine user role and use appropriate endpoint
-//     const user = JSON.parse(localStorage.getItem('user') || '{}');
-//     const isAdmin = user.role === 'admin';
+static async getAllTasks() {
+  try {
+    // Try to determine user role and use appropriate endpoint
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.role === 'admin';
     
-//     let response;
-//     if (isAdmin) {
-//       response = await taskAPI.getAdminTasks();
-//     } else {
-//       response = await taskAPI.getUserTasks();
-//     }
+    let response;
+    if (isAdmin) {
+      response = await taskAPI.getAdminTasks();
+    } else {
+      response = await taskAPI.getUserTasks();
+    }
     
-//     return response.data;
-//   } catch (error) {
-//     console.error('Error fetching tasks:', error);
-//     throw error;
-//   }
-// }
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    throw error;
+  }
+}
 
   // Get all tasks
-  static async getAllTasks() {
-    try {
-      const response = await taskAPI.getAllTasks();
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      throw error;
-    }
-  }
+  // static async getAllTasks() {
+  //   try {
+  //     const response = await taskAPI.getAllTasks();
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Error fetching tasks:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Get user-specific tasks
   static async getUserTasks() {
@@ -1010,7 +1010,9 @@ static async rejectTask(taskId: string, rejectedBy: string, reason?: string) {
       console.log('🔄 TaskService.pauseTask:', { taskId, elapsedTime });
       const response = await taskAPI.pauseTask(taskId, { 
         elapsedTime,
-        pausedAt: new Date().toISOString()
+        pausedAt: new Date().toISOString(),
+         // Save the total accumulated time
+      totalDuration: elapsedTime
       });
       return response.data;
     } catch (error) {
@@ -1025,7 +1027,10 @@ static async rejectTask(taskId: string, rejectedBy: string, reason?: string) {
       console.log('🔄 TaskService.resumeTask:', { taskId, elapsedTime });
       const response = await taskAPI.resumeTask(taskId, {
         elapsedTime,
-        resumedAt: new Date().toISOString()
+        resumedAt: new Date().toISOString(),
+         totalDuration: elapsedTime,
+      // Set the resume time for accurate current session calculation
+      lastResumeTime: new Date().toISOString()
       });
       return response.data;
     } catch (error) {
