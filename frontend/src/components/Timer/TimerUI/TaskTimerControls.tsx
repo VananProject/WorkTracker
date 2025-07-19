@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { PlayArrow, Pause, Stop, Add, Warning, Clear } from '@mui/icons-material';
 import { timerStyles } from '../../../styles/TaskTimer.styles';
-import { calculateTaskElapsedTime } from '../TableUI/utils/timeUtils';
 
 interface TaskTimerControlsProps {
   state: any;
@@ -152,34 +151,6 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
   // New state for stop confirmation dialog
   const [showStopConfirm, setShowStopConfirm] = React.useState(false);
   const [stopDescription, setStopDescription] = React.useState('');
-// Add user validation function
-const isCurrentUserTask = (task: any): boolean => {
-  try {
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!currentUser.email || !task) return false;
-    
-    return task.createdBy === currentUser.email || 
-           task.assignedToEmail === currentUser.email ||
-           task.userEmail === currentUser.email;
-  } catch (error) {
-    console.error('Error validating user task:', error);
-    return false;
-  }
-};
-
-// Update the sync effect
-useEffect(() => {
-  if (state.currentTask && state.isRunning && isCurrentUserTask(state.currentTask)) {
-    const interval = setInterval(() => {
-      const realTime = calculateTaskElapsedTime(state.currentTask);
-      if (Math.abs(realTime - state.elapsedTime) > 2) {
-        dispatch({ type: 'SET_ELAPSED_TIME', payload: realTime });
-      }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }
-}, [state.currentTask, state.isRunning, state.elapsedTime]);
 
   // Check if there's a currently running task (not paused)
   const hasRunningTask = state.currentTask && 

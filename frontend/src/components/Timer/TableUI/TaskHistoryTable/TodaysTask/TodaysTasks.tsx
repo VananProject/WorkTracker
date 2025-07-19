@@ -203,7 +203,7 @@ const handleToggleTaskExpansion = (taskId: string) => {
     setTimeout(() => onRefreshTasks(), 500); // Small delay to ensure backend update
   }
 };
-// Add this at the beginning of the component
+// Make sure this doesn't filter out ended tasks
 const validTasks = useMemo(() => {
   return tasks.filter(task => {
     const isValid = task && 
@@ -213,15 +213,13 @@ const validTasks = useMemo(() => {
                    task.taskName.trim() !== '' &&
                    task.userEmail;
     
-    if (!isValid) {
-      console.warn('⚠️ TodaysTasks: Filtering out invalid task:', task);
-    }
+    // ✅ Don't filter out ended tasks - they should show
+    // Remove any status filtering that excludes 'ended' tasks
     
     return isValid;
-    
   });
-  
 }, [tasks]);
+
 
   const handleRecurringClick = (task: Task) => {
     setSelectedTask(task);

@@ -1,4 +1,8 @@
-
+interface PauseSession {
+  pausedAt: string;
+  resumedAt?: string;
+  duration?: number;
+}
 export const formatDuration = (seconds: number): string => {
   if (!seconds || isNaN(seconds) || seconds < 0) return '0s';
   
@@ -63,44 +67,6 @@ export const getRelativeTime = (dateString: string): string => {
   
   return formatDateTime(dateString);
 };
-
-// Simplified utility function for calculating elapsed time
-// export const calculateTaskElapsedTime = (task: any): number => {
-//   if (!task) {
-//     return 0;
-//   }
-  
-//   const now = new Date();
-//   const previousDuration = typeof task.duration === 'number' ? task.duration : 0;
-  
-//   // If task is currently running
-//   if (task.status === 'started' || task.status === 'resumed') {
-//     // Try to get the most recent start time
-//     let startTimeString = task.lastStartTime || task.startTime || task.createdAt;
-    
-//     if (!startTimeString) {
-//       return previousDuration;
-//     }
-    
-//     const startTime = new Date(startTimeString);
-    
-//     if (isNaN(startTime.getTime())) {
-//       return previousDuration;
-//     }
-    
-//     const currentSessionElapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-    
-//     // Ensure we don't get negative values
-//     const validSessionElapsed = Math.max(0, currentSessionElapsed);
-    
-//     return previousDuration + validSessionElapsed;
-//   }
-  
-//   // If task is paused or stopped, return accumulated duration
-//   return previousDuration;
-// };
-// Update calculateTaskElapsedTime function
-// Add helper function to get current user
 const getCurrentUser = () => {
   try {
     const user = localStorage.getItem('user');
@@ -120,8 +86,6 @@ const isCurrentUserTask = (task: any): boolean => {
          task.assignedToEmail === currentUser.email ||
          task.userEmail === currentUser.email;
 };
-
-// Update calculateTaskElapsedTime function
 export const calculateTaskElapsedTime = (task: any): number => {
   if (!task) {
     return 0;
@@ -133,32 +97,69 @@ export const calculateTaskElapsedTime = (task: any): number => {
   }
   
   const now = new Date();
-  const previousDuration = typeof task.totalDuration === 'number' ? task.totalDuration : 0;
   
-  // If task is currently running
-  if (task.status === 'started' || task.status === 'resumed') {
-    let startTimeString = task.lastStartTime || task.startDate || task.createdAt;
-    
-    if (!startTimeString) {
-      return previousDuration;
-    }
-    
-    const startTime = new Date(startTimeString);
-    
-    if (isNaN(startTime.getTime())) {
-      return previousDuration;
-    }
-    
-    const currentSessionElapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
-    const validSessionElapsed = Math.max(0, currentSessionElapsed);
-    
-    return previousDuration + validSessionElapsed;
+  // Get task start time
+  const taskStartTime = new Date(task.startTime || task.startDate || task.createdAt);
+  if (isNaN(taskStartTime.getTime())) {
+    return task.totalDuration || 0;
   }
   
-  return previousDuration;
+  // If task is ended, return stored duration
+  if (task.status === 'ended' || task.status === 'completed') {
+    return task.totalDuration || 0;
+  }
+  
+  // Calculate total elapsed time from start to now
+  const totalElapsedFromStart = Math.floor((now.getTime() - taskStartTime.getTime()) / 1000);
+  
+  // Get pause sessions from localStorage
+  const pauseSessionsKey = `task_${task.taskId}_pauseSessions`;
+  let pauseSessions: PauseSession[] = [];
+  
+  try {
+    const stored = localStorage.getItem(pauseSessionsKey);
+    pauseSessions = stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    pauseSessions = [];
+  }
+  
+  // Calculate total pause time
+  let totalPauseTime = 0;
+  
+  pauseSessions.forEach(session => {
+    if (session.pausedAt && session.resumedAt) {
+      // Completed pause session
+      const pausedAt = new Date(session.pausedAt);
+      const resumedAt = new Date(session.resumedAt);
+      
+      if (!isNaN(pausedAt.getTime()) && !isNaN(resumedAt.getTime())) {
+        const pauseDuration = Math.floor((resumedAt.getTime() - pausedAt.getTime()) / 1000);
+        totalPauseTime += Math.max(0, pauseDuration);
+      }
+    } else if (session.pausedAt && task.status === 'paused') {
+      // Currently paused - calculate pause time up to now
+      const pausedAt = new Date(session.pausedAt);
+      if (!isNaN(pausedAt.getTime())) {
+        const currentPauseDuration = Math.floor((now.getTime() - pausedAt.getTime()) / 1000);
+        totalPauseTime += Math.max(0, currentPauseDuration);
+      }
+    }
+  });
+  
+  // Calculate actual working time
+  const actualWorkingTime = Math.max(0, totalElapsedFromStart - totalPauseTime);
+  
+  console.log('⏱️ Accurate time calculation:', {
+    taskName: task.taskName,
+    status: task.status,
+    totalElapsedFromStart,
+    totalPauseTime,
+    actualWorkingTime,
+    pauseSessionsCount: pauseSessions.length
+  });
+  
+  return actualWorkingTime;
 };
-
-
 // Utility to get real-time duration for display
 export const getRealTimeDuration = (task: any): number => {
   return calculateTaskElapsedTime(task);

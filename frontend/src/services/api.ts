@@ -147,17 +147,26 @@ export const taskAPI = {
   // Start an assigned task
   startAssignedTask: (taskId: string) => api.put(`/tasks/start-assigned/${taskId}`),
   
-  // FIXED: Pause a task - Updated to match backend endpoint pattern
-  pauseTask: (taskId: string, data: { elapsedTime: number; pausedAt?: string }) => {
-    console.log('📡 API Call: pauseTask', { taskId, data });
-    return api.put(`/tasks/pause/${taskId}`, data);
-  },
-  
-  // FIXED: Resume a task - Updated to match backend endpoint pattern
-  resumeTask: (taskId: string, data: { elapsedTime?: number; resumedAt?: string }) => {
-    console.log('📡 API Call: resumeTask', { taskId, data });
-    return api.put(`/tasks/resume/${taskId}`, data);
-  },
+// Update the pauseTask API call
+pauseTask: (taskId: string, data: { 
+  elapsedTime: number; 
+  pausedAt?: string; 
+  totalDuration?: number; // Add this as optional
+}) => {
+  console.log('📡 API Call: pauseTask', { taskId, data });
+  return api.put(`/tasks/pause/${taskId}`, data);
+},
+
+// Update the resumeTask API call  
+resumeTask: (taskId: string, data: { 
+  elapsedTime?: number; 
+  resumedAt?: string; 
+  totalDuration?: number; // Add this as optional
+  lastResumeTime?: string; // Add this as optional
+}) => {
+  console.log('📡 API Call: resumeTask', { taskId, data });
+  return api.put(`/tasks/resume/${taskId}`, data);
+},
   
 
 // FIXED: End a task - Updated to match backend endpoint pattern
