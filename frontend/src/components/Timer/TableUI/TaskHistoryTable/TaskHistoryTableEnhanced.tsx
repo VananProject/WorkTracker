@@ -656,31 +656,7 @@ const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     
     return nextRun.toISOString();
   };
-// const handleApproveTask = async (task: any, comments?: string) => {
-//   try {
-//     const response = await TaskService.approveTask(task.taskId, comments);
-//     if (response.success) {
-//       setAlarmNotification(`✅ Task "${task.taskName}" approved successfully!`);
-//       loadAllTasks();
-//       loadAssignedTasks();
-//     }
-//   } catch (error) {
-//     dispatch({ type: 'SET_ERROR', payload: 'Failed to approve task' });
-//   }
-// };
 
-// const handleRejectTask = async (task: any, reason?: string) => {
-//   try {
-//     const response = await TaskService.rejectTask(task.taskId, reason);
-//     if (response.success) {
-//       setAlarmNotification(`❌ Task "${task.taskName}" rejected.`);
-//       loadAllTasks();
-//       loadAssignedTasks();
-//     }
-//   } catch (error) {
-//     dispatch({ type: 'SET_ERROR', payload: 'Failed to reject task' });
-//   }
-// };
 
   const loadAllTasks = async () => {
     try {
@@ -1030,7 +1006,7 @@ useEffect(() => {
   if (activeTab === 1 || activeTab === 2) {
     console.log(`🔄 Switched to tab ${activeTab}, refreshing tasks...`);
     setTimeout(() => {
-      refreshTasks();
+      // refreshTasks();
     }, 100);
   }
 }, [activeTab, refreshTasks]);
@@ -1274,14 +1250,7 @@ const handleRejectTask = async (task: Task) => {
               formatTime={formatTime}
               disabled={filteredTasks.length === 0}
             />
-            {/* <Button
-              variant="outlined"
-              startIcon={<Schedule />}
-              onClick={onToggleHistory}
-              size="small"
-            >
-              {showHistory ? 'Hide' : 'Show'} History
-            </Button> */}
+        
           </Box>
         </Box>
 
@@ -1385,20 +1354,7 @@ const handleRejectTask = async (task: Task) => {
                   </Box>
                 }
               />
-              {/* <Tab 
-  icon={<Assignment />}
-  label={
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="body2">Pending Approval</Typography>
-      <Chip 
-        label={categorizedTasks.approvalTasks.length}
-        size="small"
-        color="warning"
-        sx={{ minWidth: 24, height: 20, fontSize: '0.75rem', fontWeight: 600 }}
-      />
-    </Box>
-  }
-/> */}
+
 
  
 
@@ -1450,24 +1406,7 @@ const handleRejectTask = async (task: Task) => {
             />
           </TabPanel>
 
-          {/* ✅ Tab 1: Tasks I Assigned to Others - NOW AVAILABLE TO ALL USERS */}
-          {/* <TabPanel value={activeTab} index={1}>
-            <TasksIAssignedToOthers
-              tasks={categorizedTasks.tasksIAssignedToOthers}
-              formatTime={formatTime}
-              onTableAction={onTableAction}
-              isRunning={isRunning}
-              currentUser={currentUser}
-              calculatedDurations={calculatedDurations}
-              onDurationCalculated={handleDurationCalculated}
-              expandedRows={expandedRows}
-              onToggleRowExpansion={onToggleRowExpansion}
-              onToggleRecurring={handleToggleRecurring}
-               onApproveTask={handleApproveTask}
-  onRejectTask={handleRejectTask}
-   onTaskUpdate={handleTaskUpdate} 
-            />
-          </TabPanel> */}
+         
         
 
 <TabPanel value={activeTab} index={1}>
@@ -1731,16 +1670,6 @@ const handleRejectTask = async (task: Task) => {
     onRefresh={refreshTasks}
   />
 </TabPanel>
-
-{/* <TabPanel value={activeTab} index={4}>
-  <ApprovalTasks
-    tasks={categorizedTasks.approvalTasks}
-    formatTime={formatTime}
-    currentUser={currentUser}
-    onApproveTask={handleApproveTask}
-    onRejectTask={handleRejectTask}
-  />
-</TabPanel> */}
 
   
 

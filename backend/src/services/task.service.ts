@@ -2,7 +2,7 @@ import { TaskRepository } from '../repositories/task.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { Task } from '../entities/Task.entity';
 import { CreateTaskDto, AssignTaskDto, UpdateTaskDto, CreateTaskMappingDto, TaskLevelStatsDto, UpdateTaskMappingDto } from '../dto/task.dto';
-import TaskMapping, { ITaskMapping } from '@models/TaskMapping';
+import TaskMapping, { ITaskMapping } from '../models/TaskMapping';
 
 export class TaskService {
   private taskRepository: TaskRepository;
@@ -499,51 +499,7 @@ async updateTaskStatus(taskId: string, status: string, userEmail: string): Promi
   }
 }
 
-  // async updateTaskStatus(taskId: string, updateDto: UpdateTaskDto): Promise<{ success: boolean; message: string; data?: Task; error?: string }> {
-  //   try {
-  //     const task = await this.taskRepository.findByTaskId(taskId);
-  //     if (!task) {
-  //       return {
-  //         success: false,
-  //         message: 'Task not found'
-  //       };
-  //     }
-
-  //     const updateData: Partial<Task> = {
-  //       status: updateDto.status,
-  //       totalDuration: updateDto.elapsedTime || task.totalDuration
-  //     };
-
-  //     if (updateDto.status === 'ended') {
-  //       updateData.endDate = updateDto.endDate || new Date();
-  //     }
-
-  //     // Add activity
-  //     if (updateDto.status) {
-  //       const activity = {
-  //         action: updateDto.status,
-  //         timestamp: updateDto.timestamp || new Date(),
-  //         duration: updateDto.elapsedTime || 0
-  //       };
-
-  //       await this.taskRepository.addActivity(taskId, activity);
-  //     }
-
-  //     const updatedTask = await this.taskRepository.update(taskId, updateData);
-
-  //     return {
-  //       success: true,
-  //       message: `Task ${updateDto.status} successfully`,
-  //       data: updatedTask!
-  //     };
-  //   } catch (error: any) {
-  //     return {
-  //       success: false,
-  //       message: `Failed to ${updateDto.status} task`,
-  //       error: error.message
-  //     };
-  //   }
-  // }
+  
 
   async startAssignedTask(taskId: string): Promise<{ success: boolean; message: string; data?: Task; error?: string }> {
     try {
@@ -607,6 +563,63 @@ async updateTask(taskId: string, updateData: any, userEmail: string): Promise<an
     throw error;
   }
 }
+// Add these methods to your TaskService class
+
+async deleteTask(taskId: string, userEmail: string, isAdmin: boolean): Promise<any> {
+  try {
+    console.log('🗑️ TaskService.deleteTask:', { taskId, userEmail, isAdmin });
+    
+    const task = await this.taskRepository.findByTaskId(taskId);
+    if (!task) {
+      return { success: false, message: 'Task not found' };
+    }
+
+    const canDelete = isAdmin || 
+                     task.userEmail === userEmail ||
+                     task.assignedByEmail === userEmail;
+
+    if (!canDelete) {
+      return { success: false, message: 'Permission denied' };
+    }
+
+    await this.taskRepository.deleteTask(taskId);
+    return { success: true, message: 'Task deleted successfully' };
+  } catch (error: any) {
+    console.error('❌ TaskService.deleteTask error:', error);
+    return { success: false, message: 'Failed to delete task', error: error.message };
+  }
+}
+
+async editTask(taskId: string, updateData: any, userEmail: string, isAdmin: boolean): Promise<any> {
+  try {
+    console.log('✏️ TaskService.editTask:', { taskId, updateData, userEmail, isAdmin });
+    
+    const task = await this.taskRepository.findByTaskId(taskId);
+    if (!task) {
+      return { success: false, message: 'Task not found' };
+    }
+
+    const canEdit = isAdmin || 
+                   task.userEmail === userEmail ||
+                   task.assignedByEmail === userEmail;
+
+    if (!canEdit) {
+      return { success: false, message: 'Permission denied' };
+    }
+
+    const updatedTask = await this.taskRepository.updateTask(taskId, {
+      ...updateData,
+      updatedAt: new Date()
+    });
+    
+    return { success: true, message: 'Task updated successfully', data: updatedTask };
+  } catch (error: any) {
+    console.error('❌ TaskService.editTask error:', error);
+    return { success: false, message: 'Failed to update task', error: error.message };
+  }
+}
+
+
 
 async updateRecurringSettings(taskId: string, recurringData: any, userEmail: string): Promise<any> {
   try {

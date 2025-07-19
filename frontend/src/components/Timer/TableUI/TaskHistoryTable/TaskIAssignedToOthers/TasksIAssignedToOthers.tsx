@@ -1,572 +1,4 @@
-// import React, { useState, useMemo } from 'react';
-// import {
-//   Box,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Paper,
-//   Chip,
-//   IconButton,
-//   Button,
-//   TablePagination,
-//   Typography,
-//   Collapse,
-//   Avatar
-// } from '@mui/material';
-// import {
-//   ExpandMore,
-//   ExpandLess,
-//   PlayArrow,
-//   Stop,
-//   Person,
-//   Business,
-//   KeyboardArrowDown,
-//   KeyboardArrowRight,
-//   PersonAdd,
-//   Repeat
-// } from '@mui/icons-material';
-// // import ActivityTimeline from './ActivityTimeline';
-// // import { Task, UserGroup } from '../types/TaskHistoryTypes';
-// import { getLastActivityTime } from '../utils/dateUtils';
-// import ActivityTimeline from '../components/ActivityTimeline';
-// import type { Task, UserGroup } from '../types/TaskHistoryTypes';
-// import RecurringDialog from './RecurringDialog';
-// // import RecurringDialog from '../components/RecurringDialog';
-// interface TasksIAssignedToOthersProps {
-//   tasks: Task[];
-//   formatTime: (seconds: number) => string;
-//   onTableAction: (task: Task, action: 'resume' | 'stop' | 'start') => void;
-//   isRunning: boolean;
-//   currentUser: any;
-//   calculatedDurations: Record<string, number>;
-//   onDurationCalculated: (taskId: string, duration: number) => void;
-//   expandedRows: Set<string>;
-//   onToggleRowExpansion: (id: string) => void;
-//   onToggleRecurring?: (task: Task) => void;
-// }
 
-// const TasksIAssignedToOthers: React.FC<TasksIAssignedToOthersProps> = ({
-//   tasks,
-//   formatTime,
-//   onTableAction,
-//   isRunning,
-//   currentUser,
-//   calculatedDurations,
-//   onDurationCalculated,
-//   expandedRows,
-//   onToggleRowExpansion,
-//   onToggleRecurring
-// }) => {
-//   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-//   const [page, setPage] = useState(0);
-//   const [rowsPerPage, setRowsPerPage] = useState(10);
-// const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
-// const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-//   const handleToggleTaskExpansion = (taskId: string) => {
-//     const newExpanded = new Set(expandedTasks);
-//     if (newExpanded.has(taskId)) {
-//       newExpanded.delete(taskId);
-//     } else {
-//       newExpanded.add(taskId);
-//     }
-//     setExpandedTasks(newExpanded);
-//   };
-// const handleRecurringClick = (task: Task) => {
-//   setSelectedTask(task);
-//   setRecurringDialogOpen(true);
-// };
-
-// const handleRecurringSave = (task: Task, recurringSettings: any) => {
-//   const updatedTask = {
-//     ...task,
-//     ...recurringSettings
-//   };
-  
-//   onTableAction(updatedTask, 'start');
-//   console.log(`✅ Task "${task.taskName}" recurring settings updated`);
-// };
-//     const handleTaskAction = (task: Task, action: 'resume' | 'stop' | 'start') => {
-//     if (action === 'resume' || action === 'start') {
-//       const enhancedTask = {
-//         ...task,
-//         elapsedTime: task.totalDuration || 0,
-//         totalDuration: task.totalDuration || 0,
-//         resumedAt: new Date().toISOString(),
-//         id: task.taskId || task.id || '',
-//         taskId: task.taskId || task.id || '',
-//         assignedBy: (task as any).assignedBy,
-//         assignedTo: (task as any).assignedTo,
-//         assignedByEmail: (task as any).assignedByEmail,
-//         assignedToEmail: (task as any).assignedToEmail,
-//         isAssigned: (task as any).isAssigned
-//       };
-//       onTableAction(enhancedTask, action);
-//     } else {
-//       onTableAction(task, action);
-//     }
-//   };
-
-//   const getTaskDuration = (task: Task): number => {
-//     if (calculatedDurations[task.taskId] !== undefined) {
-//       return calculatedDurations[task.taskId];
-//     }
-//     return task.totalDuration || 0;
-//   };
-
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case 'started': return 'success';
-//       case 'paused': return 'warning';
-//       case 'resumed': return 'info';
-//       case 'ended': return 'default';
-//       default: return 'default';
-//     }
-//   };
-
-//   const getTypeIcon = (type: string) => {
-//     return type === 'meeting' ? <Business fontSize="small" /> : <Person fontSize="small" />;
-//   };
-
-//   // Group tasks by assignee
-//   const groupTasksByAssignee = (tasks: Task[]): UserGroup[] => {
-//     const assigneeGroups: { [email: string]: UserGroup } = {};
-
-//     tasks.forEach(task => {
-//       const assigneeEmail = (task as any).assignedToEmail || (task as any).assignedTo || 
-//                            (task as any).assigned_to?.email || (task as any).assigned_to ||
-//                            (task as any).assignedUser?.email || (task as any).assignedUser ||
-//                            (task as any).assignee?.email || (task as any).assignee ||
-//                            'unknown@example.com';
-      
-//       const assigneeName = (task as any).assignedToName || 
-//                           (task as any).assignedUserName || 
-//                           (task as any).assignee?.name || (task as any).assignee?.username ||
-//                           (assigneeEmail && typeof assigneeEmail === 'string' ? 
-//                            assigneeEmail.split('@')[0] : 'Unknown User');
-
-//       if (!assigneeGroups[assigneeEmail]) {
-//         assigneeGroups[assigneeEmail] = {
-//           userEmail: assigneeEmail,
-//           username: assigneeName,
-//           totalTasks: 0,
-//           completedTasks: 0,
-//           activeTasks: 0,
-//           assignedTasks: 0,
-//           selfCreatedTasks: 0,
-//           totalDuration: 0,
-//           tasks: []
-//         };
-//       }
-
-//       const group = assigneeGroups[assigneeEmail];
-//       group.tasks.push(task);
-//       group.totalTasks++;
-//       group.totalDuration += task.totalDuration || 0;
-
-//       if (task.status === 'ended' ) {
-//         group.completedTasks++;
-//       } else if (['started', 'resumed', 'paused'].includes(task.status)) {
-//         group.activeTasks++;
-//       }
-
-//       group.assignedTasks++;
-//     });
-
-//     return Object.values(assigneeGroups).sort((a, b) => a.username.localeCompare(b.username));
-//   };
-
-//   const assigneeGroups = useMemo(() => groupTasksByAssignee(tasks), [tasks]);
-
-//   const paginatedGroups = useMemo(() => {
-//     const startIndex = page * rowsPerPage;
-//     return assigneeGroups.slice(startIndex, startIndex + rowsPerPage);
-//   }, [assigneeGroups, page, rowsPerPage]);
-
-//   const handlePageChange = (event: unknown, newPage: number) => {
-//     setPage(newPage);
-//   };
-
-//   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     setRowsPerPage(parseInt(event.target.value, 10));
-//     setPage(0);
-//   };
-
-//   const renderAssigneeGroupRow = (assigneeGroup: UserGroup) => {
-//     const isExpanded = expandedRows.has(assigneeGroup.userEmail);
-    
-//     return (
-//       <React.Fragment key={assigneeGroup.userEmail}>
-//         <TableRow 
-//           hover 
-//           sx={{ 
-//             cursor: 'pointer',
-//             bgcolor: 'rgba(233, 30, 99, 0.08)',
-//             '&:hover': { bgcolor: 'rgba(233, 30, 99, 0.15)' }
-//           }}
-//           onClick={() => onToggleRowExpansion(assigneeGroup.userEmail)}
-//         >
-//           <TableCell>
-//             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//               <IconButton size="small">
-//                 {isExpanded ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
-//               </IconButton>
-//               <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-//                 {assigneeGroup.username.charAt(0).toUpperCase()}
-//               </Avatar>
-//               <Box>
-//                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'secondary.main' }}>
-//                   {assigneeGroup.username}
-//                 </Typography>
-//                 <Typography variant="caption" color="textSecondary">
-//                   {assigneeGroup.userEmail}
-//                 </Typography>
-//                 <Chip 
-//                   label="Assignee" 
-//                   size="small" 
-//                   color="secondary" 
-//                   variant="outlined"
-//                   sx={{ ml: 1, height: 16, fontSize: '0.6rem' }}
-//                 />
-//               </Box>
-//             </Box>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Typography variant="h6" color="secondary.main">
-//               {assigneeGroup.totalTasks}
-//             </Typography>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Typography variant="body2" color="success.main">
-//               {assigneeGroup.completedTasks}
-//             </Typography>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Typography variant="body2" color="warning.main">
-//               {assigneeGroup.activeTasks}
-//             </Typography>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Typography variant="body2" color="info.main">
-//               {assigneeGroup.assignedTasks}
-//             </Typography>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-//               <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-//                 {formatTime(assigneeGroup.totalDuration)}
-//               </Typography>
-//               {(() => {
-//                 const calculatedTotal = assigneeGroup.tasks.reduce((total, task) => 
-//                   total + getTaskDuration(task), 0
-//                 );
-//                 return calculatedTotal !== assigneeGroup.totalDuration ? (
-//                   <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'success.main' }}>
-//                     Calc: {formatTime(calculatedTotal)}
-//                   </Typography>
-//                 ) : null;
-//               })()}
-//             </Box>
-//           </TableCell>
-//           <TableCell align="center">
-//             <Typography variant="body2" color="info.main">
-//               {assigneeGroup.tasks.filter(task => (task as any).isRecurring).length}
-//             </Typography>
-//           </TableCell>
-//         </TableRow>
-        
-//         {/* Assignee's Tasks */}
-//         <TableRow>
-//           <TableCell colSpan={7} sx={{ p: 0, border: 'none' }}>
-//             <Collapse in={isExpanded}>
-//               <Box sx={{ p: 2, bgcolor: 'rgba(233, 30, 99, 0.03)' }}>
-//                 <Typography variant="subtitle2" gutterBottom color="secondary.main">
-//                   Tasks assigned to {assigneeGroup.username}
-//                 </Typography>
-//                 <Table size="small">
-//                   <TableHead>
-//                     <TableRow>
-//                       <TableCell>Task Details</TableCell>
-//                       <TableCell>Type</TableCell>
-//                       <TableCell>Status</TableCell>
-//                       <TableCell>Duration</TableCell>
-//                       <TableCell>Assigned Date</TableCell>
-//                       <TableCell>Last Activity</TableCell>
-//                       <TableCell>Recurring</TableCell>
-//                       <TableCell>Actions</TableCell>
-//                     </TableRow>
-//                   </TableHead>
-//                   <TableBody>
-//                     {assigneeGroup.tasks.map((task: Task) => (
-//                       <React.Fragment key={task.taskId}>
-//                         <TableRow hover>
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//                               <IconButton 
-//                                 size="small"
-//                                 onClick={() => handleToggleTaskExpansion(task.taskId)}
-//                               >
-//                                 {expandedTasks.has(task.taskId) ? <ExpandLess /> : <ExpandMore />}
-//                               </IconButton>
-//                               <Box>
-//                                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-//                                   {task.taskName}
-//                                 </Typography>
-//                                 <Typography variant="caption" color="textSecondary">
-//                                   ID: {task.taskId}
-//                                 </Typography>
-//                               </Box>
-//                             </Box>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-//                               {getTypeIcon(task.type)}
-//                               <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-//                                 {task.type}
-//                               </Typography>
-//                             </Box>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Chip
-//                               label={task.status}
-//                               size="small"
-//                               color={getStatusColor(task.status) as any}
-//                               variant="outlined"
-//                             />
-//                           </TableCell>
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-//                               <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-//                                 {formatTime(getTaskDuration(task))}
-//                               </Typography>
-//                               {calculatedDurations[task.taskId] !== undefined && 
-//                                calculatedDurations[task.taskId] !== (task.totalDuration || 0) && (
-//                                 <Chip
-//                                   label="Recalculated"
-//                                   size="small"
-//                                   color="success"
-//                                   variant="outlined"
-//                                   sx={{ height: 16, fontSize: '0.6rem', mt: 0.5 }}
-//                                 />
-//                               )}
-//                             </Box>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Typography variant="caption">
-//                               {(task as any).assignedAt || (task as any).createdAt || 'Unknown'}
-//                             </Typography>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Typography variant="caption">
-//                               {getLastActivityTime(task)}
-//                             </Typography>
-//                           </TableCell>
-//                          <TableCell>
-//   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//     {(task as any).isRecurring ? (
-//       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-//         <Chip
-//           icon={<Repeat />}
-//           label={`${(task as any).recurringType || 'Active'}`}
-//           size="small"
-//           color={(task as any).recurringStatus === 'active' ? 'success' : 'warning'}
-//           variant="filled"
-//           onClick={() => handleRecurringClick(task)}
-//           sx={{ cursor: 'pointer' }}
-//         />
-//         <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.65rem' }}>
-//           {(task as any).recurringCount || 0} runs
-//         </Typography>
-//       </Box>
-//     ) : (
-//       <Button
-//         size="small"
-//         startIcon={<Repeat />}
-//         onClick={() => handleRecurringClick(task)}
-//         variant="outlined"
-//         color="primary"
-//       >
-//         Set Recurring
-//       </Button>
-//     )}
-//   </Box>
-// </TableCell>
-// <RecurringDialog
-//   open={recurringDialogOpen}
-//   task={selectedTask}
-//   onClose={() => {
-//     setRecurringDialogOpen(false);
-//     setSelectedTask(null);
-//   }}
-//   onSave={handleRecurringSave}
-// />
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', gap: 0.5 }}>
-//                               {task.status === 'paused' && (
-//                                 <Button
-//                                   size="small"
-//                                   startIcon={<PlayArrow />}
-//                                   onClick={() => handleTaskAction(task, 'resume')}
-//                                   disabled={isRunning}
-//                                   color="success"
-//                                 >
-//                                   Resume
-//                                 </Button>
-//                               )}
-//                               {['started', 'resumed'].includes(task.status) && (
-//                                 <Button
-//                                   size="small"
-//                                   startIcon={<Stop />}
-//                                   onClick={() => handleTaskAction(task, 'stop')}
-//                                   color="error"
-//                                 >
-//                                   Stop
-//                                 </Button>
-//                               )}
-//                             </Box>
-//                           </TableCell>
-//                         </TableRow>
-                        
-//                         <TableRow>
-//                           <TableCell colSpan={8} sx={{ p: 0, border: 'none' }}>
-//                             <ActivityTimeline
-//                               task={task}
-//                               isExpanded={expandedTasks.has(task.taskId)}
-//                               formatTime={formatTime}
-//                               onDurationCalculated={onDurationCalculated}
-//                             />
-//                           </TableCell>
-//                         </TableRow>
-//                       </React.Fragment>
-//                     ))}
-//                   </TableBody>
-//                 </Table>
-//               </Box>
-//             </Collapse>
-//           </TableCell>
-//         </TableRow>
-//       </React.Fragment>
-//     );
-//   };
-
-//   if (assigneeGroups.length === 0) {
-//     return (
-//       <Box sx={{ textAlign: 'center', py: 4 }}>
-//         <PersonAdd sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-//         <Typography variant="h6" color="textSecondary" gutterBottom>
-//           No Assigned Tasks Found
-//         </Typography>
-//         <Typography variant="body2" color="textSecondary" paragraph>
-//           No tasks that you assigned to others found. Make sure tasks have proper assignment fields.
-//         </Typography>
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
-//         <Table stickyHeader size="small">
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Assignee</TableCell>
-//               <TableCell align="center">Total Tasks</TableCell>
-//               <TableCell align="center">Completed</TableCell>
-//               <TableCell align="center">Active</TableCell>
-//               <TableCell align="center">Assigned</TableCell>
-//               <TableCell align="center">Total Duration</TableCell>
-//               <TableCell align="center">Recurring Tasks</TableCell>
-//             </TableRow>
-//           </TableHead>
-//                  <TableBody>
-//             {paginatedGroups.map((assigneeGroup: UserGroup) => 
-//               renderAssigneeGroupRow(assigneeGroup)
-//             )}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-
-//       <TablePagination
-//         component="div"
-//         count={assigneeGroups.length}
-//         page={page}
-//         onPageChange={handlePageChange}
-//         rowsPerPage={rowsPerPage}
-//         onRowsPerPageChange={handleRowsPerPageChange}
-//         rowsPerPageOptions={[5, 10, 25, 50]}
-//         showFirstButton
-//         showLastButton
-//       />
-
-//       {/* Assignment Summary */}
-//       <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(233, 30, 99, 0.05)', borderRadius: 1 }}>
-//         <Typography variant="h6" gutterBottom color="secondary.main">
-//           Assignment Summary
-//         </Typography>
-//         <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Total Assignees
-//             </Typography>
-//             <Typography variant="h6" color="secondary.main">
-//               {assigneeGroups.length}
-//             </Typography>
-//           </Box>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Total Assigned Tasks
-//             </Typography>
-//             <Typography variant="h6" color="secondary.main">
-//               {assigneeGroups.reduce((sum, group) => sum + group.totalTasks, 0)}
-//             </Typography>
-//           </Box>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Completed Tasks
-//             </Typography>
-//             <Typography variant="h6" color="success.main">
-//               {assigneeGroups.reduce((sum, group) => sum + group.completedTasks, 0)}
-//             </Typography>
-//           </Box>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Active Tasks
-//             </Typography>
-//             <Typography variant="h6" color="warning.main">
-//               {assigneeGroups.reduce((sum, group) => sum + group.activeTasks, 0)}
-//             </Typography>
-//           </Box>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Recurring Tasks
-//             </Typography>
-//             <Typography variant="h6" color="info.main">
-//               {assigneeGroups.reduce((sum, group) => 
-//                 sum + group.tasks.filter(task => (task as any).isRecurring).length, 0
-//               )}
-//             </Typography>
-//           </Box>
-//           <Box>
-//             <Typography variant="body2" color="textSecondary">
-//               Total Duration (Calculated)
-//             </Typography>
-//             <Typography variant="h6" sx={{ fontFamily: 'monospace', color: 'success.main' }}>
-//               {formatTime(
-//                 tasks.reduce((total: number, task: Task) => 
-//                   total + getTaskDuration(task), 0
-//                 )
-//               )}
-//             </Typography>
-//           </Box>
-//         </Box>
-//       </Box>
-//     </>
-//   );
-// };
-
-// export default TasksIAssignedToOthers;
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -590,7 +22,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField
+  TextField,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select
 } from '@mui/material';
 import {
   ExpandMore,
@@ -605,13 +41,15 @@ import {
   Repeat,
   Info,
   Cancel,
-  CheckCircle
+  CheckCircle,
+  Delete,
+  Edit
 } from '@mui/icons-material';
 import ActivityTimeline from '../../components/ActivityTimeline';
 import type { Task, UserGroup } from '../../types/TaskHistoryTypes';
 import { getLastActivityTime } from '../../utils/dateUtils';
 import RecurringDialog from '../RecurringTask/RecurringDialog';
-import taskService from '../../../../../services/taskService';
+import taskService, { deleteTask, editTask } from '../../../../../services/taskService';
 // import { taskService } from '../../../../../services/taskService'; 
 interface TasksIAssignedToOthersProps {
   tasks: Task[];
@@ -659,6 +97,73 @@ const [approvalDialog, setApprovalDialog] = useState({
   type: 'approve' as 'approve' | 'reject',
   comments: ''
 });
+const [editDialogOpen, setEditDialogOpen] = useState(false);
+const [editingTask, setEditingTask] = useState<Task | null>(null);
+const [editFormData, setEditFormData] = useState({
+  taskName: '',
+  description: '',
+  type: 'task'
+});
+
+// Add these handlers
+const handleEditTask = (task: Task) => {
+  setEditingTask(task);
+  setEditFormData({
+    taskName: task.taskName,
+    description: task.description || '',
+    type: task.type
+  });
+  setEditDialogOpen(true);
+};
+
+// Update the handleSaveEdit method
+const handleSaveEdit = async () => {
+  if (!editingTask) return;
+  
+  try {
+    const result = await editTask(editingTask.taskId, editFormData);
+    if (result.success) {
+      alert('Task updated successfully');
+      setEditDialogOpen(false);
+      setEditingTask(null);
+      
+      // ✅ Force immediate refresh
+      if (onRefreshTasks) {
+        console.log('🔄 TasksIAssignedToOthers: Refreshing tasks after edit');
+        onRefreshTasks();
+      }
+    } else {
+      alert('Failed to update task: ' + result.error);
+    }
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert('Failed to update task: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+};
+
+// Update the handleDeleteTask method
+const handleDeleteTask = async (task: Task) => {
+  if (window.confirm(`Are you sure you want to delete "${task.taskName}"?`)) {
+    try {
+      const result = await deleteTask(task.taskId);
+      if (result.success) {
+        alert('Task deleted successfully');
+        
+        // ✅ Force immediate refresh
+        if (onRefreshTasks) {
+          console.log('🔄 TasksIAssignedToOthers: Refreshing tasks after delete');
+          onRefreshTasks();
+        }
+      } else {
+        alert('Failed to delete task: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }
+};
+
  // ✅ Get current user email helper
   const getCurrentUserEmail = () => {
     if (currentUser?.email) return currentUser.email;
@@ -824,18 +329,7 @@ const handleApprovalConfirm = async () => {
     setTimeout(() => onRefreshTasks(), 500);
   }
   };
-  // const handleConfirm = () => {
-  //   if (selectedTask) {
-  //     if (dialogType === 'approve') {
-  //       onApproveTask(selectedTask, comments);
-  //     } else if (dialogType === 'reject') {
-  //       onRejectTask(selectedTask, comments);
-  //     }
-  //   }
-  //   setSelectedTask(null);
-  //   setDialogType(null);
-  //   setComments('');
-  // };
+  
   const getTaskDuration = (task: Task): number => {
     if (calculatedDurations[task.taskId] !== undefined) {
       return calculatedDurations[task.taskId];
@@ -1036,6 +530,7 @@ const handleApprovalConfirm = async () => {
                       <TableCell>Last Activity</TableCell>
                       <TableCell>Recurring</TableCell>
                       <TableCell>Actions</TableCell>
+                       <TableCell>Approval</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1135,15 +630,7 @@ const handleApprovalConfirm = async () => {
                           </TableCell>
            <TableCell>
           <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            {/* DEBUG: Show what conditions are being checked */}
-            {/* <Box sx={{ mb: 1, p: 1, bgcolor: 'info.50', borderRadius: 1, fontSize: '0.7rem' }}>
-              <Typography variant="caption" sx={{ display: 'block' }}>
-                Debug: approvalNeeded={JSON.stringify((task as any).approvalNeeded)} | 
-                status={task.status} | 
-                isApproved={JSON.stringify((task as any).isApproved)}
-              </Typography>
-            </Box> */}
-
+        
             {/* Existing resume/stop buttons */}
            {false && task.status === 'paused' && (
               
@@ -1224,41 +711,29 @@ const handleApprovalConfirm = async () => {
                 variant="filled"
               />
             )}
-            
-            {/* {((task as any).approvalNeeded || (task as any).approval_needed) && (task as any).isApproved === false && (
-              <Chip
-                label="❌ Rejected"
-                size="small"
-                color="error"
-                variant="filled"
-              />
-            )} */}
-
-            {/* TEMPORARY: Force show buttons for testing */}
-            {/* {task.status === 'ended' && (
-               <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  color="success"
-                                  startIcon={<CheckCircle />}
-                                  onClick={() => handleApprove(task)}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  color="error"
-                                  startIcon={<Cancel />}
-                                  onClick={() => handleReject(task)}
-                                >
-                                  Reject
-                                </Button>
-                              </Box>
-            )} */}
+           
+         
           </Box>
         </TableCell>
+        <TableCell>  <Box sx={{ display: 'flex', gap: 0.5 }}><Button
+      size="small"
+      startIcon={<Edit />}
+      onClick={() => handleEditTask(task)}
+      variant="outlined"
+      color="primary"
+    >
+      Edit
+    </Button>
+    <Button
+      size="small"
+      startIcon={<Delete />}
+      onClick={() => handleDeleteTask(task)}
+      variant="outlined"
+      color="error"
+    >
+      Delete
+    </Button></Box></TableCell>
+
       </TableRow>
                         
                         <TableRow>
@@ -1278,6 +753,7 @@ const handleApprovalConfirm = async () => {
               </Box>
             </Collapse>
           </TableCell>
+
         </TableRow>
               {/* ✅ Update the approval dialog */}
      <Dialog 
@@ -1373,13 +849,7 @@ const handleApprovalConfirm = async () => {
 
   return (
     <>
-      {/* Enhanced info alert for all users */}
-      {/* <Alert severity="success" sx={{ mb: 2 }}>
-        <Typography variant="body2">
-          <strong>Tasks You Assigned:</strong> Showing {assigneeGroups.length} assignee(s) with {tasks.length} total task(s) 
-          that you assigned to other users. You can monitor their progress and manage recurring settings.
-        </Typography>
-      </Alert> */}
+     
 
       <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
         <Table stickyHeader size="small">
@@ -1515,6 +985,41 @@ const handleApprovalConfirm = async () => {
         }}
         onSave={handleRecurringSave}
       />
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Task</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Task Name"
+            value={editFormData.taskName}
+            onChange={(e) => setEditFormData({...editFormData, taskName: e.target.value})}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Description"
+            value={editFormData.description}
+            onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+            margin="normal"
+            multiline
+            rows={3}
+          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Type</InputLabel>
+            <Select
+              value={editFormData.type}
+              onChange={(e) => setEditFormData({...editFormData, type: e.target.value})}
+            >
+              <MenuItem value="task">Task</MenuItem>
+              <MenuItem value="meeting">Meeting</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveEdit} variant="contained">Save</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

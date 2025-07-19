@@ -53,6 +53,102 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
 
   // Use AppBar state for admin panel
   const showAdminPanel = showAdminPanelFromAppBar;
+// Add function to get current user
+const getCurrentUser = () => {
+  try {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+};
+
+// Update calculateRealElapsedTime to check user ownership
+const calculateRealElapsedTime = useCallback((task: any) => {
+  if (!task) return 0;
+  
+  const currentUser = getCurrentUser();
+  if (!currentUser) return 0;
+  
+  // Check if task belongs to current user
+  const isUserTask = task.createdBy === currentUser.email || 
+                    task.assignedToEmail === currentUser.email ||
+                    task.userEmail === currentUser.email;
+  
+  if (!isUserTask) return 0;
+  
+  const now = new Date();
+  const previousDuration = task.totalDuration || 0;
+  
+  // If task is currently running
+  if (task.status === 'started' || task.status === 'resumed') {
+    const startTime = new Date(task.lastStartTime || task.startDate);
+    if (isNaN(startTime.getTime())) return previousDuration;
+    
+    const currentSessionElapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+    return previousDuration + Math.max(0, currentSessionElapsed);
+  }
+  
+  return previousDuration;
+}, []);
+
+// Update restore timer state to filter current user tasks only
+useEffect(() => {
+  const restoreTimerState = async () => {
+    try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        console.log('No current user found');
+        return;
+      }
+
+      const response = await TaskService.getUserTasks(); // Use getUserTasks instead of getAllTasks
+      if (response.success) {
+        const userRunningTask = response.data.find((task: any) => {
+          const isUserTask = task.createdBy === currentUser.email || 
+                            task.assignedToEmail === currentUser.email ||
+                            task.userEmail === currentUser.email;
+          
+          const isRunning = task.status === 'started' || task.status === 'resumed';
+          
+          return isUserTask && isRunning;
+        });
+        
+        if (userRunningTask) {
+          console.log('🔄 Restoring user task:', userRunningTask.taskName);
+          const realElapsedTime = calculateRealElapsedTime(userRunningTask);
+          dispatch({ 
+            type: 'RESTORE_TASK', 
+            payload: { 
+              task: userRunningTask, 
+              elapsedTime: realElapsedTime 
+            } 
+          });
+        } else {
+          console.log('No running tasks found for current user');
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring timer state:', error);
+    }
+  };
+
+  restoreTimerState();
+}, [calculateRealElapsedTime]);
+
+// Add this effect to save timer state
+useEffect(() => {
+  if (state.currentTask && state.isRunning) {
+    localStorage.setItem('timerState', JSON.stringify({
+      currentTask: state.currentTask,
+      isRunning: state.isRunning,
+      startTime: new Date().toISOString()
+    }));
+  } else {
+    localStorage.removeItem('timerState');
+  }
+}, [state.currentTask, state.isRunning]);
 
   const handleFilterChange = (field: string, value: string) => {
     setTableFilters(prev => ({
@@ -78,18 +174,18 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
     }
   };
 
-  const getCurrentUser = () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        return JSON.parse(userStr);
-      }
-      return null;
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      return null;
-    }
-  };
+  // const getCurrentUser = () => {
+  //   try {
+  //     const userStr = localStorage.getItem('user');
+  //     if (userStr) {
+  //       return JSON.parse(userStr);
+  //     }
+  //     return null;
+  //   } catch (error) {
+  //     console.error('Error parsing user data:', error);
+  //     return null;
+  //   }
+  // };
 
   // Get current user
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -110,6 +206,63 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
       notificationService.clearAllTimers();
     };
   }, []);
+
+  // Update persistence effect
+useEffect(() => {
+  const currentUser = getCurrentUser();
+  
+  if (state.currentTask && state.isRunning && currentUser) {
+    // Only save if it's the current user's task
+    const isUserTask = state.currentTask.createdBy === currentUser.email || 
+                      state.currentTask.assignedToEmail === currentUser.email ||
+                      state.currentTask.userEmail === currentUser.email;
+    
+    if (isUserTask) {
+      localStorage.setItem('timerState', JSON.stringify({
+        currentTask: state.currentTask,
+        isRunning: state.isRunning,
+        userEmail: currentUser.email,
+        startTime: new Date().toISOString()
+      }));
+    }
+  } else {
+    localStorage.removeItem('timerState');
+  }
+}, [state.currentTask, state.isRunning]);
+
+// Update restore from localStorage
+const restoreFromLocalStorage = () => {
+  try {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return false;
+    
+    const savedState = localStorage.getItem('timerState');
+    if (savedState) {
+      const parsed = JSON.parse(savedState);
+      
+      // Validate it's the same user
+      if (parsed.userEmail === currentUser.email) {
+        const realElapsedTime = calculateRealElapsedTime(parsed.currentTask);
+        dispatch({ 
+          type: 'RESTORE_TASK', 
+          payload: { 
+            task: parsed.currentTask, 
+            elapsedTime: realElapsedTime 
+          } 
+        });
+        return true;
+      } else {
+        // Different user, clear the saved state
+        localStorage.removeItem('timerState');
+      }
+    }
+  } catch (error) {
+    console.error('Error restoring from localStorage:', error);
+    localStorage.removeItem('timerState');
+  }
+  return false;
+};
+
 
   const loadAllTasks = async () => {
     try {
@@ -414,21 +567,7 @@ const handlePause = async () => {
     }
   };
 
-  // const handleStop = async () => {
-  //   if (!state.currentTask) return;
-
-  //   try {
-  //     await TaskService.endTask(state.currentTask.taskId, state.elapsedTime);
-  //     dispatch({ type: 'STOP_TASK' });
-  //     dispatch({ type: 'CLEAR_ERROR' });
-      
-  //     notificationService.stopPausedTaskMonitoring(state.currentTask.taskId);
-      
-  //     loadAllTasks();
-  //   } catch (error) {
-  //     dispatch({ type: 'SET_ERROR', payload: 'Failed to stop task' });
-  //   }
-  // };
+  
 const handleStop = async (description?: string) => {
   if (!state.currentTask) return;
 
@@ -573,12 +712,7 @@ const refreshTasks = async () => {
     });
   };
 
-  // const handleAssignTaskDataChange = (field: string, value: string | Date | null) => {
-  //   setAssignTaskData(prev => ({
-  //     ...prev,
-  //     [field]: value
-  //   }));
-  // };
+
 
   const handleAssignTaskDataChange = (field: string, value: any) => {
   console.log('🔄 Parent handling data change:', { field, value });

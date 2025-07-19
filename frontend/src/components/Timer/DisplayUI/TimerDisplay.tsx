@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Chip, Button } from '@mui/material';
 import { Alarm } from '@mui/icons-material';
 import { timerStyles } from '../../../styles/TaskTimer.styles';
+import { calculateTaskElapsedTime } from '../TableUI/utils/timeUtils';
 // import { timerStyles } from '../../styles/TaskTimer.styles';
 
 interface TimerDisplayProps {
@@ -11,7 +12,18 @@ interface TimerDisplayProps {
   formatTime: (seconds: number) => string;
   onTestAlarmSound: () => void;
 }
-
+const isCurrentUserTask = (task: any): boolean => {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!currentUser.email || !task) return false;
+    
+    return task.createdBy === currentUser.email || 
+           task.assignedToEmail === currentUser.email ||
+           task.userEmail === currentUser.email;
+  } catch (error) {
+    return false;
+  }
+};
 const TimerDisplay: React.FC<TimerDisplayProps> = ({
   elapsedTime,
   currentTask,
@@ -19,10 +31,25 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   formatTime,
   onTestAlarmSound
 }) => {
+  const displayTime = (currentTask && isCurrentUserTask(currentTask)) 
+    ? calculateTaskElapsedTime(currentTask) 
+    : elapsedTime;
+  
+  // Don't show timer if not user's task
+  if (currentTask && !isCurrentUserTask(currentTask)) {
+    return (
+      <Box sx={timerStyles.timerDisplay}>
+        <Typography variant="h6" color="text.secondary">
+          No active timer
+        </Typography>
+      </Box>
+    );
+  }
+  
   return (
     <Box sx={timerStyles.timerDisplay}>
       <Typography variant="h2" sx={timerStyles.timeText}>
-        {formatTime(elapsedTime)}
+        {formatTime(displayTime)}
       </Typography>
       
       {currentTask && (

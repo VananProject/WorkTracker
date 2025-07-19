@@ -18,16 +18,21 @@ import {
   useTheme,
   Grid,
   Card,
-  CardContent
+  CardContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import {
   Close,
   Group,
   PersonAdd,
   Settings,
-  Email
+  Email,
+  Delete,
+  Edit
 } from '@mui/icons-material';
 import Signup from '../../../Signup';
+import { authAPI } from '../../../../services/api';
 interface UserManagementDialogProps {
   open: boolean;
   onClose: () => void;
@@ -42,13 +47,70 @@ const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // State to manage the visibility of the signup form
   const [showSignup, setShowSignup] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+const [editFormData, setEditFormData] = useState({
+  username: '',
+  email: '',
+  password: '',
+  telegramNumber: '',
+  role: ''
+});
   const handleAddUser = () => {
     setShowSignup(true); // Show the signup form
   };
-  const handleUserSettings = (userId: string) => {
-    console.log('User settings for:', userId);
-    // Implement user settings functionality
-  };
+  // const handleUserSettings = (userId: string) => {
+  //   console.log('User settings for:', userId);
+  //   // Implement user settings functionality
+  // };
+  const handleEditUser = (user: any) => {
+  setEditingUser(user);
+  setEditFormData({
+    username: user.username,
+    email: user.email,
+    password: '',
+    telegramNumber: user.telegramNumber || '',
+    role: user.role
+  });
+};
+
+// const handleDeleteUser = async (userId: string, username: string) => {
+//   if (window.confirm(`Are you sure you want to delete user "${username}"?`)) {
+//     try {
+//       const response = await authAPI.deleteUser(userId);
+//       alert('User deleted successfully');
+//       window.location.reload();
+//     } catch (error: any) {
+//       console.error('Error deleting user:', error);
+//       const errorMessage = error.response?.data?.message || error.message || 'Error deleting user';
+//       alert(errorMessage);
+//     }
+//   }
+// };
+
+// Replace the handleSaveEdit function
+const handleSaveEdit = async () => {
+  try {
+    const updateData: any = {
+      username: editFormData.username,
+      email: editFormData.email,
+      telegramNumber: editFormData.telegramNumber,
+      role: editFormData.role
+    };
+    
+    // Only include password if it's provided
+    if (editFormData.password.trim()) {
+      updateData.password = editFormData.password;
+    }
+    
+    const response = await authAPI.updateUser(editingUser._id, updateData);
+    alert('User updated successfully');
+    setEditingUser(null);
+    window.location.reload();
+  } catch (error: any) {
+    console.error('Error updating user:', error);
+    alert(error.response?.data?.message || 'Error updating user');
+  }
+};
   const handleSwitchToLogin = () => {
     setShowSignup(false); // Hide the signup form
   };
@@ -154,13 +216,20 @@ const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
                           </Typography>
                         </Box>
                       </Box>
-                      <IconButton 
-                        size="small" 
-                        color="primary"
-                        onClick={() => handleUserSettings(user._id)}
-                      >
-                        <Settings />
-                      </IconButton>
+                     <IconButton 
+    size="small" 
+    color="primary"
+    onClick={() => handleEditUser(user)}
+  >
+    <Edit />
+  </IconButton>
+  {/* <IconButton 
+    size="small" 
+    color="error"
+    onClick={() => handleDeleteUser(user._id, user.username)}
+  >
+    <Delete />
+  </IconButton> */}
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Chip
@@ -266,19 +335,76 @@ const UserManagementDialog: React.FC<UserManagementDialogProps> = ({
                   }
                 />
                 <Box sx={{ ml: 2 }}>
-                  <IconButton 
-                    size="small" 
-                    color="primary"
-                    onClick={() => handleUserSettings(user._id)}
-                  >
-                    <Settings />
-                  </IconButton>
+                   <IconButton 
+    size="small" 
+    color="primary"
+    onClick={() => handleEditUser(user)}
+  >
+    <Edit />
+  </IconButton>
+  {/* <IconButton 
+    size="small" 
+    color="error"
+    onClick={() => handleDeleteUser(user._id, user.username)}
+  >
+    <Delete />
+  </IconButton> */}
                 </Box>
               </ListItem>
             ))}
           </List>
         )}
       </DialogContent>
+      {editingUser && (
+  <Dialog open={!!editingUser} onClose={() => setEditingUser(null)} maxWidth="sm" fullWidth>
+    <DialogTitle>Edit User</DialogTitle>
+    <DialogContent>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+        <TextField
+          label="Username"
+          value={editFormData.username}
+          onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
+          fullWidth
+        />
+        <TextField
+          label="Email"
+          value={editFormData.email}
+          onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+          fullWidth
+        />
+        <TextField
+          label="New Password (leave empty to keep current)"
+          type="password"
+          value={editFormData.password}
+          onChange={(e) => setEditFormData({...editFormData, password: e.target.value})}
+          fullWidth
+        />
+        <TextField
+          label="Phone/Telegram Number"
+          value={editFormData.telegramNumber}
+          onChange={(e) => setEditFormData({...editFormData, telegramNumber: e.target.value})}
+          fullWidth
+        />
+        <TextField
+          select
+          label="Role"
+          value={editFormData.role}
+          onChange={(e) => setEditFormData({...editFormData, role: e.target.value})}
+          fullWidth
+          SelectProps={{ native: true }}
+        >
+          <option value="user">User</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </TextField>
+      </Box>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={() => setEditingUser(null)}>Cancel</Button>
+      <Button onClick={handleSaveEdit} variant="contained">Save</Button>
+    </DialogActions>
+  </Dialog>
+)}
     </Dialog>
   );
 };
