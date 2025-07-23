@@ -1884,4 +1884,4 @@ const handleRejectTask = async (task: Task) => {
   );
 };
 
-export default TaskHistoryTableEnhanced;
+export default React.memo(TaskHistoryTableEnhanced);

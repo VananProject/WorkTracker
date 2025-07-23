@@ -1061,7 +1061,7 @@ const convertToTask = (recurringTask: RecurringTask): Task => {
   );
 };
 
-export default RecurringTasks;
+export default React.memo(RecurringTasks);
 
                       
 

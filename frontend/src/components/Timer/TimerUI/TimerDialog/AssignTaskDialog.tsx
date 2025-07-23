@@ -1395,4 +1395,4 @@ const formatRecurringSummary = () => {
   );
 };
 
-export default AssignTaskDialog;
+export default React.memo(AssignTaskDialog);

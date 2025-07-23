@@ -1,6 +1,6 @@
 // import { useReducer } from 'react';
 
-import React from "react";
+import React, { useEffect, useReducer } from "react";
 
 interface TimerState {
   currentTask: any | null;
@@ -53,7 +53,36 @@ const initialState: TimerState = {
   error: null,
   taskHistory: [],
 };
+const STORAGE_KEY = 'timerState';
 
+const loadState = (): TimerState => {
+  const savedState = localStorage.getItem(STORAGE_KEY);
+  if (savedState) {
+    const parsedState = JSON.parse(savedState);
+    // Ensure the elapsed time is accurate
+    if (parsedState.isRunning) {
+      const now = Date.now();
+      const timeDiff = (now - parsedState.lastUpdated) / 1000;
+      parsedState.elapsedTime += Math.floor(timeDiff);
+    }
+    return parsedState;
+  }
+  return initialState;
+};
+
+const saveState = (state: TimerState) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({...state, lastUpdated: Date.now()}));
+};
+
+export const useTimerReducer = () => {
+  const [state, dispatch] = useReducer(timerReducer, loadState());
+
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
+
+  return [state, dispatch] as const;
+};
 export const timerReducer = (state: TimerState, action: TimerAction): TimerState => {
   console.log('🔄 Reducer Action:', action.type, action);
   
@@ -217,7 +246,7 @@ export const timerReducer = (state: TimerState, action: TimerAction): TimerState
   }
 };
 
-export const useTimerReducer = () => {
-  return React.useReducer(timerReducer, initialState);
-};
+// export const useTimerReducer = () => {
+//   return React.useReducer(timerReducer, initialState);
+// };
 

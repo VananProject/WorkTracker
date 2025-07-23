@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useTimerReducer } from '../../../hooks/useTimerReducer';
 import { authAPI } from '../../../services/api';
 import { notificationService } from '../../../services/notificationService';
@@ -20,6 +20,7 @@ interface PauseSession {
   resumedAt?: string;
   duration?: number;
 }
+
 const TaskTimer: React.FC<TaskTimerProps> = ({ 
   showAdminPanelFromAppBar = false, 
   onToggleAdminPanelFromAppBar 
@@ -40,7 +41,8 @@ const TaskTimer: React.FC<TaskTimerProps> = ({
   const [tablePage, setTablePage] = React.useState(0);
   const [tableRowsPerPage, setTableRowsPerPage] = React.useState(10);
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
-  
+  // const [state, dispatch] = useTimerReducer();
+  const timerRef = useRef<number | null>(null);
   // Admin functionality
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
@@ -159,6 +161,47 @@ useEffect(() => {
     }
   };
 }, [state.isRunning, state.currentTask, calculateRealElapsedTime, state.elapsedTime]);
+ const startTimer = useCallback(() => {
+    if (timerRef.current) return;
+    const startTime = Date.now() - state.elapsedTime * 1000;
+    timerRef.current = window.setInterval(() => {
+      const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      dispatch({ type: 'SET_ELAPSED_TIME', payload: elapsedTime });
+    }, 1000);
+  }, [state.elapsedTime, dispatch]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (state.isRunning) {
+      startTimer();
+    } else {
+      stopTimer();
+    }
+    return stopTimer;
+  }, [state.isRunning, startTimer, stopTimer]);
+const alarmSoundAny = alarmSound as any;
+const notificationServiceAny = notificationService as any;
+
+useEffect(() => {
+  const alarmTime = state.alarmTime ?? 0; // fallback to 0 if null
+  if (state.isRunning && alarmTime > 0) {
+    const alarmInterval = setInterval(() => {
+      if (state.elapsedTime % (alarmTime * 60) === 0) {
+        const alarmSoundAny = alarmSound as any;
+alarmSoundAny.play();
+        notificationService.showNotification('Timer Alarm', `${alarmTime} minutes have passed!`);
+      }
+    }, 1000);
+
+    return () => clearInterval(alarmInterval);
+  }
+}, [state.isRunning, state.alarmTime, state.elapsedTime]);
 // Add cleanup function
 const cleanupTaskData = (taskId: string) => {
   localStorage.removeItem(`task_${taskId}_pauseSessions`);
@@ -974,5 +1017,5 @@ const getUniqueTaskNames = () => {
   );
 };
 
-export default TaskTimer;
+export default React.memo(TaskTimer);
 

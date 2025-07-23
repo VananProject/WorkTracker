@@ -878,5 +878,5 @@ const handleSave = () => {
   );
 };
 
-export default RecurringDialog;
+export default React.memo(RecurringDialog);
 

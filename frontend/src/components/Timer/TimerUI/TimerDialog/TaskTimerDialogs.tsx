@@ -252,4 +252,4 @@ const TaskTimerDialogs: React.FC<TaskTimerDialogsProps> = ({
   );
 };
 
-export default TaskTimerDialogs;
+export default React.memo(TaskTimerDialogs);

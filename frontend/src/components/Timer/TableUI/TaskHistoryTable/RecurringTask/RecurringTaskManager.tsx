@@ -407,5 +407,5 @@ const calculateNextRun = (task: any): string => {
   );
 };
 
-export default RecurringTaskManager;
+export default React.memo(RecurringTaskManager);
 
