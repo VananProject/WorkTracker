@@ -445,4 +445,4 @@ const TaskMappingTab: React.FC<TaskMappingTabProps> = ({
   );
 };
 
-export default TaskMappingTab;
+export default React.memo(TaskMappingTab);

@@ -1400,5 +1400,5 @@ export const editTask = async (taskId: string, updateData: any) => {
 };
 
 
-export default TaskService;
+export default React.memo(TaskService);
 

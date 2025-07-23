@@ -257,4 +257,4 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
   );
 };
 
-export default TaskTimerControls;
+export default React.memo(TaskTimerControls);

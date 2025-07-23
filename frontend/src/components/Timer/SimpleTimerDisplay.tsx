@@ -66,4 +66,4 @@ const SimpleTimerDisplay: React.FC<SimpleTimerDisplayProps> = ({
   );
 };
 
-export default SimpleTimerDisplay;
+export default React.memo(SimpleTimerDisplay);

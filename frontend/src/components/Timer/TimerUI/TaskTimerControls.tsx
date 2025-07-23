@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Box,
   Button,
@@ -151,69 +151,126 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
   // New state for stop confirmation dialog
   const [showStopConfirm, setShowStopConfirm] = React.useState(false);
   const [stopDescription, setStopDescription] = React.useState('');
+  const [isActionInProgress, setIsActionInProgress] = useState(false);
 
-  // Check if there's a currently running task (not paused)
+  const debounce = (func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  };
   const hasRunningTask = state.currentTask && 
     state.currentTask.status !== 'ended' && 
     state.isRunning;
+  const handleStartNewTask = useCallback(
+    debounce((type: 'task' | 'meeting') => {
+      if (isActionInProgress) return;
+      setIsActionInProgress(true);
+
+      if (hasRunningTask) {
+        setPendingTaskType(type);
+        setShowPauseConfirm(true);
+      } else {
+        onStartTask(type);
+      }
+
+      setTimeout(() => setIsActionInProgress(false), 1000);
+    }, 300),
+    [hasRunningTask, isActionInProgress, onStartTask]
+  );
+
+  const handleStopClick = useCallback(
+    debounce(() => {
+      if (isActionInProgress) return;
+      setIsActionInProgress(true);
+      setShowStopConfirm(true);
+      setTimeout(() => setIsActionInProgress(false), 1000);
+    }, 300),
+    [isActionInProgress]
+  );
+
+  const handleConfirmPauseAndStart = useCallback(() => {
+    if (pendingTaskType) {
+      onPause();
+      setTimeout(() => {
+        onStartTask(pendingTaskType);
+      }, 100);
+    }
+    setShowPauseConfirm(false);
+    setPendingTaskType(null);
+  }, [onPause, onStartTask, pendingTaskType]);
+
+  const handleConfirmStop = useCallback(() => {
+    const description = stopDescription.trim();
+    if (description && description.length > 0) {
+      onStop(description);
+    } else {
+      onStop();
+    }
+    setShowStopConfirm(false);
+    setStopDescription('');
+  }, [onStop, stopDescription]);
+  // Check if there's a currently running task (not paused)
+
 
   // Check if there's a paused task
   const hasPausedTask = state.currentTask && 
     state.currentTask.status === 'paused' && 
     !state.isRunning;
 
-  const handleStartNewTask = (type: 'task' | 'meeting') => {
-    // If there's a running task, ask to pause it first
-    if (hasRunningTask) {
-      setPendingTaskType(type);
-      setShowPauseConfirm(true);
-      return;
-    }
+  // const handleStartNewTask = (type: 'task' | 'meeting') => {
+  //   // If there's a running task, ask to pause it first
+  //   if (hasRunningTask) {
+  //     setPendingTaskType(type);
+  //     setShowPauseConfirm(true);
+  //     return;
+  //   }
 
-    // If no running task (either no task or paused task), start new task directly
-    onStartTask(type);
-  };
+  //   // If no running task (either no task or paused task), start new task directly
+  //   onStartTask(type);
+  // };
 
-  const handleConfirmPauseAndStart = () => {
-    if (pendingTaskType) {
-      // First pause the current task
-      onPause();
+  // const handleConfirmPauseAndStart = () => {
+  //   if (pendingTaskType) {
+  //     // First pause the current task
+  //     onPause();
       
-      // Then start the new task
-      setTimeout(() => {
-        onStartTask(pendingTaskType);
-      }, 100); // Small delay to ensure pause is processed
-    }
+  //     // Then start the new task
+  //     setTimeout(() => {
+  //       onStartTask(pendingTaskType);
+  //     }, 100); // Small delay to ensure pause is processed
+  //   }
     
-    setShowPauseConfirm(false);
-    setPendingTaskType(null);
-  };
+  //   setShowPauseConfirm(false);
+  //   setPendingTaskType(null);
+  // };
 
   const handleCancelPauseAndStart = () => {
     setShowPauseConfirm(false);
     setPendingTaskType(null);
   };
 
-  // New handlers for stop confirmation
-  const handleStopClick = () => {
-    setShowStopConfirm(true);
-    setStopDescription(''); // Reset description
-  };
+  // // New handlers for stop confirmation
+  // const handleStopClick = () => {
+  //   setShowStopConfirm(true);
+  //   setStopDescription(''); // Reset description
+  // };
 
-   const handleConfirmStop = () => {
-    const description = stopDescription.trim();
+  //  const handleConfirmStop = () => {
+  //   const description = stopDescription.trim();
     
-    // Only call onStop with description if it has actual content
-    if (description && description.length > 0) {
-      onStop(description);
-    } else {
-      // Call onStop without any parameters when no description
-      onStop();
-    }
+  //   // Only call onStop with description if it has actual content
+  //   if (description && description.length > 0) {
+  //     onStop(description);
+  //   } else {
+  //     // Call onStop without any parameters when no description
+  //     onStop();
+  //   }
     
-    setShowStopConfirm(false);
-    setStopDescription('');
-  };
+  //   setShowStopConfirm(false);
+  //   setStopDescription('');
+  // };
 
 
 
@@ -243,6 +300,7 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
                 startIcon={<Pause />}
                 onClick={onPause}
                 sx={timerStyles.button}
+                disabled={isActionInProgress}
               >
                 Pause
               </Button>
@@ -253,6 +311,7 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
                 startIcon={<PlayArrow />}
                 onClick={onResume}
                 sx={timerStyles.button}
+                disabled={isActionInProgress}
               >
                 Resume
               </Button>
@@ -263,13 +322,13 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
               startIcon={<Stop />}
               onClick={handleStopClick}
               sx={timerStyles.button}
+              disabled={isActionInProgress}
             >
               Stop
             </Button>
           </>
         ) : null}
         
-        {/* New Task Button */}
         <Button
           variant="contained"
           color={hasRunningTask ? "warning" : "primary"}
@@ -283,6 +342,7 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
               }
             })
           }}
+          disabled={isActionInProgress}
           title={
             hasRunningTask 
               ? "Will pause current task and start new task" 
@@ -294,7 +354,6 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
           New Task
         </Button>
         
-        {/* New Meeting Button */}
         <Button
           variant="contained"
           color={hasRunningTask ? "warning" : "secondary"}
@@ -308,6 +367,7 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
               }
             })
           }}
+          disabled={isActionInProgress}
           title={
             hasRunningTask 
               ? "Will pause current task and start new meeting" 
@@ -461,4 +521,4 @@ const TaskTimerControls: React.FC<TaskTimerControlsProps> = ({
   );
 };
 
-export default TaskTimerControls;
+export default React.memo(TaskTimerControls);

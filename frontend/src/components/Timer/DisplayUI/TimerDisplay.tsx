@@ -81,4 +81,4 @@ const TimerDisplay: React.FC<TimerDisplayProps> = ({
   );
 };
 
-export default TimerDisplay;
+export default React.memo(TimerDisplay);

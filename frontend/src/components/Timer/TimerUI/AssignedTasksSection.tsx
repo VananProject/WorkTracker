@@ -905,6 +905,6 @@ if (tasksAssignedToMe.length === 0 && uniqueTasksAssignedByMe.length === 0) {
   );
 };
 
-export default AssignedTasksSection;
+export default React.memo(AssignedTasksSection);
 
 

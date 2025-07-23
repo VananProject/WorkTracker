@@ -1024,7 +1024,7 @@ const handleApprovalConfirm = async () => {
   );
 };
 
-export default TasksIAssignedToOthers;
+export default React.memo(TasksIAssignedToOthers);
 
 
 

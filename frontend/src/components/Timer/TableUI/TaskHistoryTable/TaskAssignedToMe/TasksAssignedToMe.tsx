@@ -1031,5 +1031,5 @@ const paginatedTasks = useMemo(() => {
   );
 };
 
-export default TasksAssignedToMe;
+export default React.memo(TasksAssignedToMe);
 

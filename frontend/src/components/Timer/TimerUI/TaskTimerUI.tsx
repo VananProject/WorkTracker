@@ -465,4 +465,4 @@ const TaskTimerUI: React.FC<TaskTimerUIProps> = (props) => {
   );
 };
 
-export default TaskTimerUI;
+export default React.memo(TaskTimerUI);

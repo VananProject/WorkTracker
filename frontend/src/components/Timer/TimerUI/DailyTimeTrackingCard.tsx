@@ -617,5 +617,5 @@ const DailyTimeTrackingCard: React.FC<DailyTimeTrackingCardProps> = ({
   );
 };
 
-export default DailyTimeTrackingCard;
+export default React.memo(DailyTimeTrackingCard);
 
